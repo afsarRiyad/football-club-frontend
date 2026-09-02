@@ -1,26 +1,386 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
+/* Clash Display — self-hosted from Fontshare */
+@font-face {
+  font-family: 'Clash Display';
+  src: url('/fonts/ClashDisplay-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Clash Display';
+  src: url('/fonts/ClashDisplay-500.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Clash Display';
+  src: url('/fonts/ClashDisplay-600.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Clash Display';
+  src: url('/fonts/ClashDisplay-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Teal/Coral palette - warm, distinctive club identity */
+  --club-primary: #0D3B3E;    /* Deep teal - nav, headings */
+  --club-accent: #FF6B4A;     /* Coral - buttons, links, live scores */
+  --club-gold: #D4A24C;       /* Warm gold - premium, achievement, trophies */
+  --pitch-green: #1A6B5A;     /* Teal-green - pitch / alternative primary */
+  
+  /* Neutral base - warm, inviting */
+  --background: #FAF6F0;      /* Warm off-white */
+  --surface: #FFFFFF;          /* White - cards, panels */
+  --surface-raised: #FFFFFF;   /* Elevated surfaces */
+  --line: #E5DDD3;             /* Warm borders/dividers */
+  --text-primary: #1A1A1A;     /* Near-black - primary text */
+  --text-secondary: #6B5F55;   /* Warm gray - secondary text */
+  --text-muted: #9B8E82;       /* Lighter warm gray - metadata */
+  
+  /* Status colors */
+  --success: #10B981;
+  --warning: #F59E0B;
+  --error: #EF4444;
+  --info: #3B82F6;
+}
+
+.dark {
+  /* Teal-tinted dark mode - near-black with teal warmth */
+  --club-primary: #3ECFD1;    /* Brightened teal - lifts off dark bg */
+  --club-accent: #FF8264;     /* Softened coral - less intense on dark */
+  --club-gold: #E8C85A;       /* Warm gold - brightened for dark */
+  --pitch-green: #2E9E8A;     /* Teal-green - brightened for dark */
+  
+  --background: #0F1717;      /* Near-black with teal tint */
+  --surface: #182524;          /* Slightly lighter teal-black */
+  --surface-raised: #1E2E2D;   /* Elevated surfaces */
+  --line: #2A3736;             /* Teal-tinted dark borders */
+  --text-primary: #F2EFEA;     /* Warm white - primary text */
+  --text-secondary: #A69D93;   /* Warm gray - secondary text */
+  --text-muted: #7A7065;       /* Muted warm gray - metadata */
+  
+  /* Status colors - optimized for dark mode */
+  --success: #34D399;
+  --warning: #FBBF24;
+  --error: #F87171;
+  --info: #60A5FA;
 }
 
 @theme inline {
+  /* Club colors */
+  --color-club-primary: var(--club-primary);
+  --color-club-accent: var(--club-accent);
+  --color-club-gold: var(--club-gold);
+  --color-pitch-green: var(--pitch-green);
+  
+  /* Semantic colors */
   --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-line: var(--line);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  
+  /* Legacy tokens used across the codebase */
+  --color-mist: var(--text-secondary);
+  --color-floodlight: var(--text-primary);
+  --color-pitch-night: var(--background);
+  --color-pitch-accent: var(--club-accent);
+  --color-card-gold: var(--club-gold);
+  --color-alert-red: var(--error);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Status colors */
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-info: var(--info);
+
+  /* Typography - Keep original fonts, just new colors */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Clash Display", var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-card: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
 }
 
 body {
   background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+::selection {
+  background: rgba(255, 107, 74, 0.2);
+  color: var(--text-primary);
+}
+
+/* Ken Burns infinite animation for academy player photos */
+@keyframes ken-burns {
+  0% {
+    transform: scale(1) translate(0, 0);
+  }
+  25% {
+    transform: scale(1.08) translate(-1%, -1%);
+  }
+  50% {
+    transform: scale(1.12) translate(1%, 0%);
+  }
+  75% {
+    transform: scale(1.08) translate(-1%, 1%);
+  }
+  100% {
+    transform: scale(1) translate(0, 0);
+  }
+}
+
+.animate-ken-burns {
+  animation: ken-burns 12s ease-in-out infinite;
+}
+
+/* Angled photo treatment — sporty diagonal cut on the left edge */
+.clip-angle-left {
+  clip-path: polygon(8% 0, 100% 0, 100% 100%, 0 100%);
+}
+
+.clip-angle-left::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(8% 0, 100% 0, 100% 100%, 0 100%);
+}
+
+/* Academy Photos — premium breathing float + soft ambient glow */
+:root {
+  --academy-glow-color: 255, 107, 74;       /* coral */
+  --academy-glow-outer: rgba(255, 107, 74, 0.12);
+  --academy-glow-inner: rgba(255, 107, 74, 0.20);
+  --academy-border-glow: rgba(255, 107, 74, 0.30);
+}
+
+.dark {
+  --academy-glow-color: 62, 207, 209;        /* teal */
+  --academy-glow-outer: rgba(62, 207, 209, 0.12);
+  --academy-glow-inner: rgba(62, 207, 209, 0.20);
+  --academy-border-glow: rgba(62, 207, 209, 0.30);
+}
+
+@keyframes academy-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes academy-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 12px 2px var(--academy-glow-outer),
+      0 0 28px 6px var(--academy-glow-inner),
+      inset 0 0 12px -4px var(--academy-glow-outer);
+  }
+  50% {
+    box-shadow:
+      0 0 20px 4px var(--academy-glow-inner),
+      0 0 48px 12px var(--academy-glow-outer),
+      inset 0 0 20px -4px var(--academy-glow-inner);
+  }
+}
+
+.animate-academy-photos {
+  animation:
+    academy-float 6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite,
+    academy-glow 5.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  will-change: transform, box-shadow;
+}
+
+/* Edge fade mask for marquee tracks */
+.mask-x-fade {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 10%,
+    black 90%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 10%,
+    black 90%,
+    transparent
+  );
+}
+
+/* ═══════════════════════════════════════════
+   FC26-style Player Card Reveal
+   ═══════════════════════════════════════════ */
+
+/* Overlay backdrop */
+@keyframes card-overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Card entrance — dramatic flip + scale + glow burst */
+@keyframes card-reveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) rotateY(90deg) translateY(40px);
+    filter: brightness(3) blur(6px);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1.08) rotateY(-8deg) translateY(-8px);
+    filter: brightness(1.4) blur(0);
+  }
+  55% {
+    transform: scale(0.97) rotateY(3deg) translateY(2px);
+    filter: brightness(1.1);
+  }
+  75% {
+    transform: scale(1.02) rotateY(-1deg);
+  }
+  100% {
+    transform: scale(1) rotateY(0deg) translateY(0);
+    filter: brightness(1);
+  }
+}
+
+/* Glow ring that pulses on reveal */
+@keyframes card-glow-ring {
+  0% {
+    box-shadow:
+      0 0 0 0 rgba(var(--academy-glow-color), 0.4),
+      0 20px 60px -10px rgba(0,0,0,0.5);
+  }
+  50% {
+    box-shadow:
+      0 0 0 12px rgba(var(--academy-glow-color), 0),
+      0 20px 60px -10px rgba(0,0,0,0.5);
+  }
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(var(--academy-glow-color), 0),
+      0 20px 60px -10px rgba(0,0,0,0.5);
+  }
+}
+
+/* Stat bars fill in */
+@keyframes stat-fill {
+  from { width: 0%; }
+}
+
+/* Player number slams in */
+@keyframes number-slam {
+  0% {
+    opacity: 0;
+    transform: scale(2) translateY(-10px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.9) translateY(1px);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Rating badge pop */
+@keyframes rating-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(-20deg);
+  }
+  60% {
+    transform: scale(1.2) rotate(5deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* Pitch player slot pulse on hover */
+@keyframes slot-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(var(--academy-glow-color), 0.3); }
+  50% { box-shadow: 0 0 0 8px rgba(var(--academy-glow-color), 0); }
+}
+
+.animate-card-reveal {
+  animation: card-reveal 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards,
+             card-glow-ring 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-card-overlay {
+  animation: card-overlay-in 0.3s ease-out forwards;
+}
+
+.animate-stat-fill {
+  animation: stat-fill 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.4s forwards;
+}
+
+.animate-number-slam {
+  animation: number-slam 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+}
+
+.animate-rating-pop {
+  animation: rating-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
+}
+
+.animate-slot-pulse:hover {
+  animation: slot-pulse 1.5s ease-in-out infinite;
+}
+
+/* Perspective for 3D card flip */
+.card-perspective {
+  perspective: 1200px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

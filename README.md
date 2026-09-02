@@ -1,36 +1,109 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Football Club Frontend
+
+A modern football club management platform built with Next.js, featuring comprehensive club administration, player management, match tracking, and fan engagement tools.
+
+## Features
+
+- **Club Management**: Admin dashboard for club operations
+- **Player & Squad Management**: Complete player profiles and squad tracking
+- **Match Management**: Live scores, fixtures, and match results
+- **News & Media**: Club news, gallery, and content management
+- **Academy System**: Youth development and training programs
+- **Statistics & Analytics**: Performance tracking and data visualization
+- **User Authentication**: Role-based access control (Admin, Coach, Scorer, etc.)
+- **Responsive Design**: Mobile-first design with professional football club aesthetics
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
+- **UI Library**: React 19
+- **Styling**: Tailwind CSS 4
+- **Animations**: Framer Motion
+- **Icons**: Lucide React
+- **Forms**: React Hook Form + Zod
+- **HTTP Client**: Axios
+- **Real-time**: Socket.io Client
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+ 
+- npm or yarn
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/afsarRiyad/football-club-frontend.git
+cd football-club-frontend
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Set up environment variables:
+```bash
+cp .env.example .env.local
+```
+
+4. Run the development server:
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/                  # Next.js app directory
+│   ├── (auth)/          # Authentication pages
+│   ├── (public)/        # Public pages
+│   ├── (protected)/     # Protected pages
+│   └── layout.tsx       # Root layout
+├── components/          # React components
+│   ├── layout/          # Layout components
+│   ├── shared/          # Shared components
+│   └── ui/              # UI components
+├── context/             # React contexts
+├── lib/                 # Utility functions
+└── types/               # TypeScript types
+```
 
-## Learn More
+## Available Scripts
 
-To learn more about Next.js, take a look at the following resources:
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm start` - Start production server
+- `npm run lint` - Run ESLint
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Design System
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The project uses a professional football club color palette:
+- **Primary**: Deep Navy (#0B2545)
+- **Accent**: Bold Red (#D62828) 
+- **Gold**: Achievement Gold (#FFC107)
+- **Background**: Off-white (#F7F7F5)
 
-## Deploy on Vercel
+Typography uses Clash Display for headings, Inter for body text, and JetBrains Mono for statistics.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## User Roles
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **SUPER_ADMIN**: Full system access
+- **CLUB_ADMIN**: Club management
+- **TEAM_MANAGER**: Team operations
+- **COACH**: Training and player development
+- **SCORER**: Match scoring
+- **MEMBER**: Regular user access
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License.
