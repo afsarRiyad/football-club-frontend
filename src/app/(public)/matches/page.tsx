@@ -12,11 +12,22 @@ function getTeamName(team: any): string {
   return team?.name || "TBD";
 }
 
+function getTeamLogo(team: any): string {
+  if (!team || typeof team === "string") return "";
+  return team?.logo || "";
+}
+
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
-    year: "numeric",
+  });
+}
+
+function formatTime(d: string) {
+  return new Date(d).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -26,6 +37,109 @@ const statusFilters = [
   { value: "LIVE", label: "Live" },
   { value: "FT", label: "Results" },
 ];
+
+// ─── Extract all events for a team side ───
+function getPlayerName(player: any): string {
+  if (!player) return "";
+  if (typeof player === "object") return `${player.firstName || ""} ${player.lastName || ""}`.trim();
+  return "";
+}
+
+function parseDescription(raw: string): { name: string; assist?: string } {
+  if (!raw) return { name: "" };
+  const parts = raw.split("|");
+  const name = parts[0]?.trim() || raw;
+  const assistPart = parts.find((p: string) => p.trim().startsWith("assist:"));
+  const assist = assistPart ? assistPart.replace("assist:", "").trim() : undefined;
+  return { name, assist };
+}
+
+type MatchEventDisplay = {
+  type: string;
+  minute: number;
+  text: string;
+  icon: string;
+  color: string;
+};
+
+function getTeamEvents(events: any[]): MatchEventDisplay[] {
+  if (!events) return [];
+  const items: MatchEventDisplay[] = [];
+
+  for (const e of events) {
+    const minute = e.minute || 0;
+    let name = getPlayerName(e.player);
+    let assist: string | undefined = getPlayerName(e.assist) || undefined;
+
+    // Fallback to description parsing
+    if (!name && e.description) {
+      const parsed = parseDescription(e.description);
+      name = parsed.name;
+      if (!assist && parsed.assist) assist = parsed.assist;
+    }
+
+    switch (e.type) {
+      case "GOAL":
+        items.push({
+          type: "GOAL",
+          minute,
+          text: name ? `${name}${assist ? ` (ast. ${assist})` : ""}` : "Goal",
+          icon: "⚽",
+          color: "text-emerald-400",
+        });
+        break;
+      case "OWN_GOAL":
+        items.push({
+          type: "OWN_GOAL",
+          minute,
+          text: name ? `${name} (OG)` : "Own Goal",
+          icon: "⚽",
+          color: "text-red-400",
+        });
+        break;
+      case "YELLOW_CARD":
+        items.push({
+          type: "YELLOW_CARD",
+          minute,
+          text: name || "Yellow",
+          icon: "🟨",
+          color: "text-yellow-400",
+        });
+        break;
+      case "RED_CARD":
+        items.push({
+          type: "RED_CARD",
+          minute,
+          text: name || "Red",
+          icon: "🟥",
+          color: "text-red-500",
+        });
+        break;
+      case "SUBSTITUTION":
+        items.push({
+          type: "SUBSTITUTION",
+          minute,
+          text: name ? `${name} ${e.description ? `(${e.description})` : ""}` : e.description || "Sub",
+          icon: "🔄",
+          color: "text-blue-400",
+        });
+        break;
+      case "PENALTY_MISSED":
+        items.push({
+          type: "PENALTY_MISSED",
+          minute,
+          text: name ? `${name} (Missed PK)` : "Penalty Missed",
+          icon: "❌",
+          color: "text-orange-400",
+        });
+        break;
+      default:
+        break;
+    }
+  }
+
+  return items.sort((a, b) => a.minute - b.minute);
+}
 
 export default function MatchesPage() {
   const [matches, setMatches] = useState<Match[]>([]);
@@ -54,7 +168,7 @@ export default function MatchesPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
       <div className="mb-10">
         <h1 className="text-4xl md:text-5xl font-bold text-floodlight font-display tracking-tight">
           Matches
@@ -87,52 +201,102 @@ export default function MatchesPage() {
         </div>
       ) : (
         <>
-          {/* Match list — clean rows, not card grids */}
           <div className="space-y-px">
             {matches.map((match) => {
               const isLive = match.status === "LIVE" || match.status === "HT";
+              const isFinished = match.status === "FT";
+              const allEvents = getTeamEvents((match as any).events);
+              const homeLogo = getTeamLogo(match.homeTeam);
+              const awayLogo = getTeamLogo(match.awayTeam);
+
               return (
                 <Link
                   key={match._id}
                   href={`/matches/${match._id}`}
-                  className="flex items-center justify-between py-5 px-4 hover:bg-surface rounded-lg transition-colors group"
+                  className="block py-4 px-4 hover:bg-surface rounded-xl transition-colors group border-b border-line/20 last:border-0"
                 >
-                  <div className="flex items-center gap-6 flex-1">
-                    <span className="text-xs text-mist font-mono w-20 shrink-0">
-                      {formatDate(match.matchDate)}
-                    </span>
-                    <span className="text-sm md:text-base text-floodlight group-hover:text-pitch-accent transition-colors font-medium">
-                      {getTeamName(match.homeTeam)}
-                    </span>
+                  {/* Date / Time */}
+                  <div className="text-[10px] text-mist font-mono mb-2">
+                    {formatDate(match.matchDate)} · {formatTime(match.matchDate)}
                   </div>
 
-                  <div className="flex items-center gap-3 px-6">
-                    {match.status === "SCHEDULED" ? (
-                      <span className="text-sm font-mono text-mist">vs</span>
-                    ) : (
-                      <span className="text-xl font-mono font-bold text-floodlight tabular-nums">
-                        {match.homeScore}
-                        <span className="text-mist mx-1.5">–</span>
-                        {match.awayScore}
-                      </span>
-                    )}
+                  {/* Match row */}
+                  <div className="flex items-center gap-4">
+                    {/* Home team */}
+                    <div className="flex-1 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <span className="text-sm md:text-base font-semibold text-floodlight group-hover:text-pitch-accent transition-colors truncate">
+                          {getTeamName(match.homeTeam)}
+                        </span>
+                        {homeLogo && (
+                          <img src={homeLogo} alt="" className="w-6 h-6 rounded-full object-contain border border-line/30 shrink-0" />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Score */}
+                    <div className="flex flex-col items-center shrink-0">
+                      {match.status === "SCHEDULED" ? (
+                        <span className="text-sm font-mono text-mist px-3">vs</span>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className={cn(
+                            "text-2xl font-black font-mono tabular-nums",
+                            match.score.home > match.score.away ? "text-pitch-accent" : "text-floodlight"
+                          )}>
+                            {match.score.home}
+                          </span>
+                          <span className="text-lg text-line/40 font-light">–</span>
+                          <span className={cn(
+                            "text-2xl font-black font-mono tabular-nums",
+                            match.score.away > match.score.home ? "text-pitch-accent" : "text-floodlight"
+                          )}>
+                            {match.score.away}
+                          </span>
+                        </div>
+                      )}
+                      {/* Status badge */}
+                      <div className="mt-1">
+                        {isLive ? (
+                          <span className="inline-flex items-center gap-1 text-[9px] font-mono font-bold text-alert-red bg-alert-red/10 px-2 py-0.5 rounded-full">
+                            <span className="h-1.5 w-1.5 rounded-full bg-alert-red animate-pulse" />
+                            LIVE
+                          </span>
+                        ) : isFinished ? (
+                          <span className="text-[9px] font-mono text-mist/60 px-2 py-0.5 rounded-full">
+                            FT
+                          </span>
+                        ) : match.status === "HT" ? (
+                          <span className="text-[9px] font-mono font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                            HT
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    {/* Away team */}
+                    <div className="flex-1 text-left">
+                      <div className="flex items-center gap-2">
+                        {awayLogo && (
+                          <img src={awayLogo} alt="" className="w-6 h-6 rounded-full object-contain border border-line/30 shrink-0" />
+                        )}
+                        <span className="text-sm md:text-base font-semibold text-floodlight group-hover:text-pitch-accent transition-colors truncate">
+                          {getTeamName(match.awayTeam)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-6 flex-1 justify-end">
-                    <span className="text-sm md:text-base text-floodlight group-hover:text-pitch-accent transition-colors font-medium">
-                      {getTeamName(match.awayTeam)}
-                    </span>
-                    <span className={cn(
-                      "text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded shrink-0",
-                      isLive
-                        ? "text-alert-red bg-alert-red/10"
-                        : match.status === "FT"
-                        ? "text-mist"
-                        : "text-mist"
-                    )}>
-                      {isLive ? "LIVE" : match.status === "FT" ? "FT" : match.status}
-                    </span>
-                  </div>
+                  {/* Events timeline below score */}
+                  {allEvents.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 justify-center">
+                      {allEvents.map((ev, i) => (
+                        <span key={i} className={`text-[11px] ${ev.color} whitespace-nowrap`}>
+                          {ev.icon} {ev.minute}&apos; {ev.text}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </Link>
               );
             })}

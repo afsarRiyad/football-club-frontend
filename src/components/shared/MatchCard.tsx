@@ -61,9 +61,9 @@ export default function MatchCard({ match }: MatchCardProps) {
               <span className="text-lg font-mono font-bold text-text-muted">vs</span>
             ) : (
               <span className="text-xl font-mono font-bold text-text-primary tabular-nums">
-                {match.homeScore}
+                {match.score.home}
                 <span className="text-text-secondary mx-1">-</span>
-                {match.awayScore}
+                {match.score.away}
               </span>
             )}
           </div>
@@ -86,10 +86,10 @@ export default function MatchCard({ match }: MatchCardProps) {
                 : formatDate(match.matchDate)}
             </span>
           </div>
-          {match.venue && (
+          {match.venue?.name && (
             <div className="flex items-center gap-1.5">
               <MapPin className="h-3 w-3" />
-              <span>{match.venue}</span>
+              <span>{match.venue.name}</span>
             </div>
           )}
         </div>

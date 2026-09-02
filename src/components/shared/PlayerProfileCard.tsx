@@ -25,12 +25,12 @@ const positionShort: Record<string, string> = {
   FORWARD: "FWD",
 };
 
-const statusColors = {
-  ACTIVE: "success" as const,
-  INJURED: "warning" as const,
-  SUSPENDED: "danger" as const,
-  TRANSFERRED: "default" as const,
-  RETIRED: "default" as const,
+const statusColors: Record<string, "success" | "warning" | "danger" | "info" | "default"> = {
+  ACTIVE: "success",
+  INJURED: "warning",
+  SUSPENDED: "danger",
+  LOANED: "info",
+  INACTIVE: "default",
 };
 
 function getPlayerName(player: Player): string {

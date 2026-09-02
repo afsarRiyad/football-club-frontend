@@ -3,27 +3,27 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, User, LogOut, Settings } from "lucide-react";
+import { Menu, X, User, LogOut } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Button, Avatar, ThemeToggle } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
   { href: "/squad", label: "Squad" },
-  { href: "/squad?view=extra", label: "Players" },
   { href: "/matches", label: "Matches" },
+  { href: "/competitions", label: "Competitions" },
+  { href: "/standings", label: "Standings" },
   { href: "/news", label: "News" },
+  { href: "/gallery", label: "Gallery" },
   { href: "/academy", label: "Academy" },
   { href: "/about", label: "About" },
 ];
 
 export default function Navbar() {
-  const { user, logout, hasRole } = useAuth();
+  const { user, logout } = useAuth();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-
-  const isAdmin = hasRole(["CLUB_ADMIN", "SUPER_ADMIN"]);
 
   return (
     <nav className="sticky top-0 z-40">
@@ -86,16 +86,7 @@ export default function Navbar() {
                           <p className="text-sm text-floodlight truncate">{user.name}</p>
                           <p className="text-xs text-mist">{user.role.replace("_", " ")}</p>
                         </div>
-                        {isAdmin && (
-                          <Link
-                            href="/admin"
-                            onClick={() => setUserMenuOpen(false)}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-mist hover:bg-surface-raised"
-                          >
-                            <Settings className="h-4 w-4" />
-                            Admin
-                          </Link>
-                        )}
+
                         <button
                           onClick={() => {
                             setUserMenuOpen(false);

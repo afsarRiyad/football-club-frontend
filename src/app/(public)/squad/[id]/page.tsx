@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Calendar, Ruler } from "lucide-react";
+import { ArrowLeft, Calendar, Ruler, Weight, Shirt, MapPin, Footprints } from "lucide-react";
 import api from "@/lib/api";
-import { Player, Club } from "@/types";
+import { Player, Statistic, StatisticType } from "@/types";
 import { PageSpinner } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
@@ -16,9 +16,70 @@ const positionFull: Record<string, string> = {
   FORWARD: "Forward",
 };
 
+const positionShort: Record<string, string> = {
+  GOALKEEPER: "GK",
+  DEFENDER: "DEF",
+  MIDFIELDER: "MID",
+  FORWARD: "FWD",
+};
+
+const positionAccent: Record<string, string> = {
+  GOALKEEPER: "text-card-gold",
+  DEFENDER: "text-pitch-accent",
+  MIDFIELDER: "text-floodlight",
+  FORWARD: "text-alert-red",
+};
+
+const positionBg: Record<string, string> = {
+  GOALKEEPER: "from-card-gold/20 to-card-gold/5",
+  DEFENDER: "from-pitch-accent/20 to-pitch-accent/5",
+  MIDFIELDER: "from-floodlight/20 to-floodlight/5",
+  FORWARD: "from-alert-red/20 to-alert-red/5",
+};
+
+function calcOVR(player: Player): number {
+  const { pac = 50, sho = 50, pas = 50, dri = 50, def = 50, phy = 50 } = player;
+  return Math.round((pac + sho + pas + dri + def + phy) / 6);
+}
+
+function getStatColor(val: number): string {
+  if (val >= 85) return "text-amber-400";
+  if (val >= 75) return "text-emerald-400";
+  if (val >= 65) return "text-blue-400";
+  if (val >= 50) return "text-white/80";
+  return "text-white/50";
+}
+
+function getBarColor(val: number): string {
+  if (val >= 85) return "bg-amber-400";
+  if (val >= 75) return "bg-emerald-400";
+  if (val >= 65) return "bg-blue-400";
+  if (val >= 50) return "bg-white/60";
+  return "bg-white/30";
+}
+
+function aggregateStats(stats: Statistic[], playerId: string) {
+  const playerStats = stats.filter((s) => {
+    const pid = typeof s.player === "string" ? s.player : s.player?._id;
+    return pid === playerId;
+  });
+  const get = (type: StatisticType) =>
+    playerStats.filter((s) => s.type === type).reduce((sum, s) => sum + s.value, 0);
+  return {
+    goals: get("GOALS"),
+    assists: get("ASSISTS"),
+    appearances: get("APPEARANCES"),
+    minutesPlayed: get("MINUTES_PLAYED"),
+    cleanSheets: get("CLEAN_SHEETS"),
+    yellowCards: get("YELLOW_CARDS"),
+    redCards: get("RED_CARDS"),
+  };
+}
+
 export default function PlayerProfilePage() {
   const params = useParams();
   const [player, setPlayer] = useState<Player | null>(null);
+  const [statistics, setStatistics] = useState<Statistic[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,8 +89,17 @@ export default function PlayerProfilePage() {
   const fetchPlayer = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get(`/players/${params.id}`);
-      setPlayer(data.data);
+      const [playerRes, statsRes] = await Promise.allSettled([
+        api.get(`/players/${params.id}`),
+        api.get("/statistics", { params: { limit: 500 } }),
+      ]);
+
+      if (playerRes.status === "fulfilled") {
+        setPlayer(playerRes.value.data.data?.player || playerRes.value.data.data);
+      }
+      if (statsRes.status === "fulfilled") {
+        setStatistics(statsRes.value.data.data || []);
+      }
     } catch (e) {
       console.error("Failed to fetch player:", e);
     } finally {
@@ -49,11 +119,32 @@ export default function PlayerProfilePage() {
 
   const name = `${player.firstName} ${player.lastName}`;
   const age = player.dateOfBirth
-    ? Math.floor((Date.now() - new Date(player.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+    ? Math.max(0, Math.floor((Date.now() - new Date(player.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)))
     : null;
+  const ovr = calcOVR(player);
+  const career = aggregateStats(statistics, player._id);
+  const pos = player.position;
+
+  const faceStats = pos === "GOALKEEPER"
+    ? [
+        { label: "DIV", value: player.pac ?? 50 },
+        { label: "HND", value: player.sho ?? 50 },
+        { label: "KIC", value: player.pas ?? 50 },
+        { label: "REF", value: player.dri ?? 50 },
+        { label: "SPD", value: player.def ?? 50 },
+        { label: "POS", value: player.phy ?? 50 },
+      ]
+    : [
+        { label: "PAC", value: player.pac ?? 50 },
+        { label: "SHO", value: player.sho ?? 50 },
+        { label: "PAS", value: player.pas ?? 50 },
+        { label: "DRI", value: player.dri ?? 50 },
+        { label: "DEF", value: player.def ?? 50 },
+        { label: "PHY", value: player.phy ?? 50 },
+      ];
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <Link
         href="/squad"
         className="inline-flex items-center gap-1.5 text-mist hover:text-floodlight text-sm mb-8 transition-colors"
@@ -62,11 +153,10 @@ export default function PlayerProfilePage() {
         Back to squad
       </Link>
 
-      {/* Player — two-column editorial layout */}
       <div className="grid md:grid-cols-5 gap-8 md:gap-12">
-        {/* Photo — takes 3 columns */}
+        {/* Photo — 3 columns */}
         <div className="md:col-span-3">
-          <div className="relative aspect-[4/5] bg-surface rounded-xl overflow-hidden">
+          <div className={cn("relative aspect-[4/5] rounded-2xl overflow-hidden bg-gradient-to-b", positionBg[pos])}>
             {player.photo ? (
               <img
                 src={player.photo}
@@ -75,66 +165,140 @@ export default function PlayerProfilePage() {
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <span className="text-8xl font-bold text-line font-display">
+                <span className="text-8xl font-bold text-line/20 font-display">
                   {player.firstName?.charAt(0)}
                 </span>
               </div>
             )}
 
-            {/* Jersey number — large, overlaid */}
-            {player.number && (
-              <span className="absolute bottom-4 right-4 text-5xl font-mono font-bold text-floodlight/20 tabular-nums">
-                {player.number}
-              </span>
-            )}
-          </div>
-        </div>
+            {/* OVR badge */}
+            <div className="absolute top-4 left-4">
+              <div className={cn(
+                "w-14 h-14 rounded-xl flex items-center justify-center backdrop-blur-md border border-white/20",
+                ovr >= 85 ? "bg-gradient-to-br from-amber-400/80 to-yellow-500/80" :
+                ovr >= 75 ? "bg-gradient-to-br from-emerald-400/80 to-emerald-500/80" :
+                "bg-gradient-to-br from-white/20 to-white/10"
+              )}>
+                <span className="text-2xl font-black text-white font-display drop-shadow-lg">{ovr}</span>
+              </div>
+            </div>
 
-        {/* Info — takes 2 columns */}
-        <div className="md:col-span-2">
-          <div className="sticky top-24">
+            {/* Jersey number */}
             {player.number && (
-              <span className="text-6xl font-mono font-bold text-line/30 tabular-nums block mb-2">
+              <span className="absolute bottom-4 right-4 text-6xl font-mono font-bold text-white/10 tabular-nums">
                 {String(player.number).padStart(2, "0")}
               </span>
             )}
 
-            <h1 className="text-3xl md:text-4xl font-bold text-floodlight font-display tracking-tight leading-tight">
-              {name}
-            </h1>
+            {/* Position badge */}
+            <div className="absolute top-4 right-4">
+              <span className="px-3 py-1 rounded-lg bg-black/40 backdrop-blur-sm text-white font-mono font-bold text-sm border border-white/10">
+                {positionShort[pos]}
+              </span>
+            </div>
+          </div>
+        </div>
 
-            <p className="text-lg text-pitch-accent font-medium mt-1">
-              {positionFull[player.position]}
-            </p>
+        {/* Info — 2 columns */}
+        <div className="md:col-span-2">
+          <div className="sticky top-24 space-y-6">
+            {/* Name + Position */}
+            <div>
+              {player.number && (
+                <span className="text-5xl font-mono font-bold text-line/20 tabular-nums block mb-1">
+                  #{player.number}
+                </span>
+              )}
+              <h1 className="text-3xl md:text-4xl font-bold text-floodlight font-display tracking-tight leading-tight">
+                {player.firstName}
+              </h1>
+              <h1 className="text-3xl md:text-4xl font-bold text-floodlight font-display tracking-tight leading-tight">
+                {player.lastName}
+              </h1>
+              <p className={cn("text-lg font-medium mt-1", positionAccent[pos])}>
+                {positionFull[pos]}
+              </p>
+            </div>
 
-            {/* Stats grid — minimal */}
-            <div className="mt-8 space-y-4">
+            {/* FIFA Stats */}
+            <div className="bg-surface rounded-xl border border-line/40 p-4">
+              <p className="text-[10px] font-mono text-mist uppercase tracking-widest mb-3">Player Attributes</p>
+              <div className="grid grid-cols-6 gap-2">
+                {faceStats.map((stat) => (
+                  <div key={stat.label} className="text-center">
+                    <p className={cn("text-xl font-black font-mono leading-none", getStatColor(stat.value))}>
+                      {stat.value}
+                    </p>
+                    <p className="text-[9px] text-mist font-mono uppercase mt-1">{stat.label}</p>
+                  </div>
+                ))}
+              </div>
+              {/* Stat bars */}
+              <div className="mt-4 space-y-2">
+                {faceStats.map((stat) => (
+                  <div key={stat.label} className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono font-bold text-mist w-7">{stat.label}</span>
+                    <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                      <div
+                        className={cn("h-full rounded-full transition-all", getBarColor(stat.value))}
+                        style={{ width: `${stat.value}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-mono font-bold text-floodlight w-5 text-right">{stat.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Bio */}
+            {player.bio && (
+              <p className="text-sm text-mist leading-relaxed">{player.bio}</p>
+            )}
+
+            {/* Info rows */}
+            <div className="space-y-3">
               {player.nationality && (
-                <div className="flex justify-between items-baseline border-b border-line/50 pb-3">
-                  <span className="text-sm text-mist">Nationality</span>
+                <div className="flex justify-between items-center border-b border-line/30 pb-2.5">
+                  <span className="flex items-center gap-2 text-sm text-mist">
+                    <MapPin className="h-3.5 w-3.5" /> Nationality
+                  </span>
                   <span className="text-sm text-floodlight font-medium">{player.nationality}</span>
                 </div>
               )}
               {age && (
-                <div className="flex justify-between items-baseline border-b border-line/50 pb-3">
-                  <span className="text-sm text-mist">Age</span>
+                <div className="flex justify-between items-center border-b border-line/30 pb-2.5">
+                  <span className="flex items-center gap-2 text-sm text-mist">
+                    <Calendar className="h-3.5 w-3.5" /> Age
+                  </span>
                   <span className="text-sm text-floodlight font-mono">{age}</span>
                 </div>
               )}
               {player.height && (
-                <div className="flex justify-between items-baseline border-b border-line/50 pb-3">
-                  <span className="text-sm text-mist">Height</span>
+                <div className="flex justify-between items-center border-b border-line/30 pb-2.5">
+                  <span className="flex items-center gap-2 text-sm text-mist">
+                    <Ruler className="h-3.5 w-3.5" /> Height
+                  </span>
                   <span className="text-sm text-floodlight font-mono">{player.height} cm</span>
                 </div>
               )}
               {player.weight && (
-                <div className="flex justify-between items-baseline border-b border-line/50 pb-3">
-                  <span className="text-sm text-mist">Weight</span>
+                <div className="flex justify-between items-center border-b border-line/30 pb-2.5">
+                  <span className="flex items-center gap-2 text-sm text-mist">
+                    <Weight className="h-3.5 w-3.5" /> Weight
+                  </span>
                   <span className="text-sm text-floodlight font-mono">{player.weight} kg</span>
                 </div>
               )}
+              {player.preferredFoot && (
+                <div className="flex justify-between items-center border-b border-line/30 pb-2.5">
+                  <span className="flex items-center gap-2 text-sm text-mist">
+                    <Footprints className="h-3.5 w-3.5" /> Preferred Foot
+                  </span>
+                  <span className="text-sm text-floodlight font-mono">{player.preferredFoot}</span>
+                </div>
+              )}
               {player.dateOfBirth && (
-                <div className="flex justify-between items-baseline border-b border-line/50 pb-3">
+                <div className="flex justify-between items-center border-b border-line/30 pb-2.5">
                   <span className="text-sm text-mist">Born</span>
                   <span className="text-sm text-floodlight font-mono">
                     {new Date(player.dateOfBirth).toLocaleDateString("en-US", {
@@ -147,6 +311,40 @@ export default function PlayerProfilePage() {
               )}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Career Statistics Section */}
+      <div className="mt-12">
+        <div className="flex items-center gap-3 mb-6">
+          <span className="text-sm font-mono font-bold text-club-accent uppercase tracking-widest">
+            Career Statistics
+          </span>
+          <span className="h-px flex-1 bg-line" />
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
+          {[
+            { label: "Appearances", value: career.appearances, color: "text-floodlight" },
+            { label: "Goals", value: career.goals, color: "text-pitch-accent" },
+            { label: "Assists", value: career.assists, color: "text-floodlight" },
+            { label: "Minutes", value: career.minutesPlayed, color: "text-mist" },
+            ...(pos === "GOALKEEPER"
+              ? [{ label: "Clean Sheets", value: career.cleanSheets, color: "text-card-gold" }]
+              : []),
+            { label: "Yellow Cards", value: career.yellowCards, color: "text-yellow-400" },
+            { label: "Red Cards", value: career.redCards, color: "text-red-400" },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className="bg-surface rounded-xl border border-line/30 p-4 text-center"
+            >
+              <p className={cn("text-2xl font-black font-mono", stat.color)}>
+                {stat.value}
+              </p>
+              <p className="text-[10px] text-mist font-mono uppercase mt-1">{stat.label}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>

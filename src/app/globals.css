@@ -259,84 +259,7 @@ body {
   to   { opacity: 1; }
 }
 
-/* Card entrance — dramatic flip + scale + glow burst */
-@keyframes card-reveal {
-  0% {
-    opacity: 0;
-    transform: scale(0.6) rotateY(90deg) translateY(40px);
-    filter: brightness(3) blur(6px);
-  }
-  35% {
-    opacity: 1;
-    transform: scale(1.08) rotateY(-8deg) translateY(-8px);
-    filter: brightness(1.4) blur(0);
-  }
-  55% {
-    transform: scale(0.97) rotateY(3deg) translateY(2px);
-    filter: brightness(1.1);
-  }
-  75% {
-    transform: scale(1.02) rotateY(-1deg);
-  }
-  100% {
-    transform: scale(1) rotateY(0deg) translateY(0);
-    filter: brightness(1);
-  }
-}
 
-/* Glow ring that pulses on reveal */
-@keyframes card-glow-ring {
-  0% {
-    box-shadow:
-      0 0 0 0 rgba(var(--academy-glow-color), 0.4),
-      0 20px 60px -10px rgba(0,0,0,0.5);
-  }
-  50% {
-    box-shadow:
-      0 0 0 12px rgba(var(--academy-glow-color), 0),
-      0 20px 60px -10px rgba(0,0,0,0.5);
-  }
-  100% {
-    box-shadow:
-      0 0 0 0 rgba(var(--academy-glow-color), 0),
-      0 20px 60px -10px rgba(0,0,0,0.5);
-  }
-}
-
-/* Stat bars fill in */
-@keyframes stat-fill {
-  from { width: 0%; }
-}
-
-/* Player number slams in */
-@keyframes number-slam {
-  0% {
-    opacity: 0;
-    transform: scale(2) translateY(-10px);
-  }
-  60% {
-    opacity: 1;
-    transform: scale(0.9) translateY(1px);
-  }
-  100% {
-    transform: scale(1) translateY(0);
-  }
-}
-
-/* Rating badge pop */
-@keyframes rating-pop {
-  0% {
-    opacity: 0;
-    transform: scale(0) rotate(-20deg);
-  }
-  60% {
-    transform: scale(1.2) rotate(5deg);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1) rotate(0deg);
-  }
-}
 
 /* Pitch player slot pulse on hover */
 @keyframes slot-pulse {
@@ -344,29 +267,215 @@ body {
   50% { box-shadow: 0 0 0 8px rgba(var(--academy-glow-color), 0); }
 }
 
-.animate-card-reveal {
-  animation: card-reveal 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards,
-             card-glow-ring 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
 
-.animate-card-overlay {
-  animation: card-overlay-in 0.3s ease-out forwards;
-}
-
-.animate-stat-fill {
-  animation: stat-fill 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.4s forwards;
-}
-
-.animate-number-slam {
-  animation: number-slam 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
-}
-
-.animate-rating-pop {
-  animation: rating-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
-}
 
 .animate-slot-pulse:hover {
   animation: slot-pulse 1.5s ease-in-out infinite;
+}
+
+/* Captain armband glow pulse */
+@keyframes captain-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 6px 1px rgba(212, 162, 76, 0.3),
+      0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 0 12px 3px rgba(212, 162, 76, 0.5),
+      0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.animate-captain-glow {
+  animation: captain-glow 2s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════
+   Card Rarity Special Effects
+   ═══════════════════════════════════════════ */
+
+/* 90+ — Fire effect — smooth, premium glow */
+@keyframes fire-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 12px 2px rgba(255, 120, 0, 0.35),
+      0 0 35px 6px rgba(255, 80, 0, 0.2),
+      0 0 70px 12px rgba(255, 40, 0, 0.1),
+      inset 0 0 12px rgba(255, 120, 0, 0.06);
+  }
+  33% {
+    box-shadow:
+      0 0 18px 4px rgba(255, 140, 20, 0.45),
+      0 0 45px 10px rgba(255, 90, 0, 0.25),
+      0 0 85px 18px rgba(255, 50, 0, 0.12),
+      inset 0 0 18px rgba(255, 140, 20, 0.08);
+  }
+  66% {
+    box-shadow:
+      0 0 15px 3px rgba(255, 100, 0, 0.4),
+      0 0 40px 8px rgba(255, 70, 0, 0.22),
+      0 0 75px 14px rgba(255, 35, 0, 0.1),
+      inset 0 0 15px rgba(255, 100, 0, 0.07);
+  }
+}
+
+@keyframes fire-aura {
+  0%, 100% { opacity: 0.5; transform: scaleY(1); }
+  50% { opacity: 0.8; transform: scaleY(1.03); }
+}
+
+.card-effect-fire {
+  animation: fire-glow 2.5s ease-in-out infinite;
+}
+
+.card-effect-fire::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  background: linear-gradient(
+    0deg,
+    rgba(255, 80, 0, 0.25) 0%,
+    rgba(255, 160, 0, 0.12) 35%,
+    rgba(255, 220, 50, 0.06) 65%,
+    transparent 100%
+  );
+  animation: fire-aura 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.card-effect-fire::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    ellipse at 50% 100%,
+    rgba(255, 120, 0, 0.12) 0%,
+    transparent 60%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 85-89 — Lightning effect — electric but controlled */
+@keyframes lightning-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 10px 2px rgba(120, 190, 255, 0.3),
+      0 0 25px 5px rgba(90, 170, 255, 0.15),
+      0 0 50px 10px rgba(60, 140, 255, 0.08),
+      inset 0 0 10px rgba(120, 190, 255, 0.05);
+  }
+  8% {
+    box-shadow:
+      0 0 25px 6px rgba(160, 220, 255, 0.55),
+      0 0 50px 12px rgba(120, 190, 255, 0.3),
+      0 0 90px 20px rgba(80, 160, 255, 0.15),
+      inset 0 0 25px rgba(160, 220, 255, 0.1);
+  }
+  10% {
+    box-shadow:
+      0 0 10px 2px rgba(120, 190, 255, 0.3),
+      0 0 25px 5px rgba(90, 170, 255, 0.15),
+      0 0 50px 10px rgba(60, 140, 255, 0.08),
+      inset 0 0 10px rgba(120, 190, 255, 0.05);
+  }
+  50% {
+    box-shadow:
+      0 0 14px 3px rgba(140, 210, 255, 0.4),
+      0 0 32px 7px rgba(100, 180, 255, 0.2),
+      0 0 60px 12px rgba(70, 150, 255, 0.1),
+      inset 0 0 14px rgba(140, 210, 255, 0.07);
+  }
+}
+
+@keyframes lightning-sweep {
+  0% { transform: translateX(-120%) skewX(-15deg); opacity: 0; }
+  40% { opacity: 0.6; }
+  100% { transform: translateX(120%) skewX(-15deg); opacity: 0; }
+}
+
+.card-effect-lightning {
+  animation: lightning-glow 3s ease-in-out infinite;
+}
+
+.card-effect-lightning::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(180, 230, 255, 0.15),
+    rgba(220, 245, 255, 0.25),
+    rgba(180, 230, 255, 0.15),
+    transparent
+  );
+  animation: lightning-sweep 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 80-84 — Gold shimmer — elegant sweep */
+@keyframes gold-shimmer {
+  0%, 100% {
+    box-shadow:
+      0 0 8px 1px rgba(212, 162, 76, 0.25),
+      0 0 20px 4px rgba(212, 162, 76, 0.12),
+      inset 0 0 8px rgba(212, 162, 76, 0.04);
+  }
+  50% {
+    box-shadow:
+      0 0 12px 2px rgba(212, 162, 76, 0.35),
+      0 0 28px 6px rgba(212, 162, 76, 0.18),
+      inset 0 0 12px rgba(212, 162, 76, 0.06);
+  }
+}
+
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-150%) rotate(25deg); }
+  100% { transform: translateX(250%) rotate(25deg); }
+}
+
+.card-effect-shimmer {
+  animation: gold-shimmer 3s ease-in-out infinite;
+}
+
+.card-effect-shimmer::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 35%;
+  height: 200%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0.06),
+    transparent
+  );
+  animation: shimmer-sweep 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Pack opening flash */
+@keyframes pack-flash {
+  0% { opacity: 0; transform: scale(0.5); }
+  20% { opacity: 1; transform: scale(1.2); }
+  100% { opacity: 0; transform: scale(2.5); }
+}
+
+.animate-pack-flash {
+  animation: pack-flash 0.6s ease-out forwards;
 }
 
 /* Perspective for 3D card flip */

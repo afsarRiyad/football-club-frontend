@@ -15,12 +15,12 @@ const positionBadge: Record<string, string> = {
   FORWARD: "bg-alert-red/10 text-alert-red",
 };
 
-const statusColors = {
-  ACTIVE: "success" as const,
-  INJURED: "warning" as const,
-  SUSPENDED: "danger" as const,
-  TRANSFERRED: "default" as const,
-  RETIRED: "default" as const,
+const statusColors: Record<string, "success" | "warning" | "danger" | "info" | "default"> = {
+  ACTIVE: "success",
+  INJURED: "warning",
+  SUSPENDED: "danger",
+  LOANED: "info",
+  INACTIVE: "default",
 };
 
 function getPlayerName(player: Player): string {

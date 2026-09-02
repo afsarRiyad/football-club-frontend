@@ -1,4 +1,4 @@
-// User and Auth Types
+// ─── User & Auth Types ──────────────────────────────────────────────
 export type UserRole =
   | "SUPER_ADMIN"
   | "CLUB_ADMIN"
@@ -29,7 +29,9 @@ export interface Membership {
 }
 
 export interface AuthResponse {
-  token: string;
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: string;
   data: {
     user: User;
   };
@@ -42,7 +44,7 @@ export interface MeResponse {
   };
 }
 
-// Club Types
+// ─── Club Types ─────────────────────────────────────────────────────
 export interface Club {
   _id: string;
   name: string;
@@ -66,14 +68,26 @@ export interface Club {
   updatedAt: string;
 }
 
-// Player Types
+// ─── Player Types ───────────────────────────────────────────────────
 export type PlayerPosition =
   | "GOALKEEPER"
   | "DEFENDER"
   | "MIDFIELDER"
   | "FORWARD";
 
-export type PlayerStatus = "ACTIVE" | "INJURED" | "SUSPENDED" | "TRANSFERRED" | "RETIRED";
+export type PlayerSubPosition =
+  | "CENTRE_BACK"
+  | "LEFT_BACK"
+  | "RIGHT_BACK"
+  | "DEFENSIVE_MIDFIELDER"
+  | "CENTRAL_MIDFIELDER"
+  | "ATTACKING_MIDFIELDER"
+  | "LEFT_WINGER"
+  | "RIGHT_WINGER"
+  | "STRIKER"
+  | "SECOND_STRIKER";
+
+export type PlayerStatus = "ACTIVE" | "INJURED" | "SUSPENDED" | "LOANED" | "INACTIVE";
 
 export interface Player {
   _id: string;
@@ -82,19 +96,37 @@ export interface Player {
   lastName: string;
   number?: number;
   position: PlayerPosition;
+  subPosition?: PlayerSubPosition;
   status: PlayerStatus;
   dateOfBirth?: string;
   nationality?: string;
   photo?: string;
   height?: number;
   weight?: number;
+  preferredFoot?: "LEFT" | "RIGHT" | "BOTH";
+  bio?: string;
+  pac?: number;
+  sho?: number;
+  pas?: number;
+  dri?: number;
+  def?: number;
+  phy?: number;
+  joinDate?: string;
+  contractEnd?: string;
+  isActive?: boolean;
   user?: string | User;
   createdAt: string;
   updatedAt: string;
 }
 
-// Team Types
+// ─── Team Types ─────────────────────────────────────────────────────
 export type TeamCategory = "SENIOR" | "JUNIOR" | "WOMEN" | "ACADEMY" | "RESERVE";
+
+export interface StartingXIEntry {
+  player: string | Player;
+  position: string;
+  slotIndex: number;
+}
 
 export interface Team {
   _id: string;
@@ -104,56 +136,99 @@ export interface Team {
   division?: string;
   manager?: string | User;
   coach?: string | User;
+  captain?: string | Player;
+  viceCaptain?: string | Player;
   players?: Player[];
+  formation?: string;
+  startingXI?: StartingXIEntry[];
   logo?: string;
+  isActive?: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-// Match Types
+// ─── Formation Types ────────────────────────────────────────────────
+export interface FormationSlot {
+  role: string;
+  x: number;
+  y: number;
+}
+
+export interface Formation {
+  name: string;
+  slots: FormationSlot[];
+}
+
+// ─── Match Types ────────────────────────────────────────────────────
 export type MatchStatus = "SCHEDULED" | "LIVE" | "HT" | "FT" | "POSTPONED" | "CANCELLED";
 
+export type MatchEventType =
+  | "GOAL"
+  | "OWN_GOAL"
+  | "YELLOW_CARD"
+  | "RED_CARD"
+  | "SUBSTITUTION"
+  | "PENALTY_MISSED"
+  | "INJURY";
+
 export interface MatchEvent {
-  type: "GOAL" | "OWN_GOAL" | "PENALTY" | "YELLOW_CARD" | "RED_CARD" | "SUBSTITUTION" | "OTHER";
-  minute: number;
+  type: MatchEventType;
+  minute?: number;
   player?: string | Player;
   assist?: string | Player;
   description?: string;
 }
 
+export interface MatchVenue {
+  name?: string;
+  address?: string;
+}
+
 export interface Match {
   _id: string;
+  club: string | Club;
   homeTeam: string | Team;
   awayTeam: string | Team;
-  homeScore: number;
-  awayScore: number;
   matchDate: string;
-  venue?: string;
+  kickoff?: string;
+  venue?: MatchVenue;
   status: MatchStatus;
-  competition?: string;
-  season?: string;
+  score: {
+    home: number;
+    away: number;
+  };
   events: MatchEvent[];
   attendance?: number;
+  competition?: string | { _id: string; name: string; type: string };
+  season?: string | { _id: string; name: string; year: number };
+  referee?: string;
+  notes?: string;
   createdAt: string;
   updatedAt: string;
 }
 
-// Competition Types
-export type CompetitionType = "LEAGUE" | "CUP" | "FRIENDLY" | "TOURNAMENT";
+// ─── Competition Types ──────────────────────────────────────────────
+export type CompetitionType = "LEAGUE" | "CUP" | "TOURNAMENT" | "FRIENDLY";
+export type CompetitionFormat = "ROUND_ROBIN" | "KNOCKOUT" | "GROUP_STAGE" | "PLAYOFF";
 
 export interface Competition {
   _id: string;
   club: string | Club;
   name: string;
+  slug?: string;
   type: CompetitionType;
-  season?: string;
-  format?: string;
-  teams?: Team[];
+  logo?: string;
+  country?: string;
+  description?: string;
+  season?: string | { _id: string; name: string; year: number };
+  teams?: (string | Team)[];
+  format?: CompetitionFormat;
+  isActive?: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-// Season Types
+// ─── Season Types ───────────────────────────────────────────────────
 export interface Season {
   _id: string;
   club: string | Club;
@@ -166,32 +241,39 @@ export interface Season {
   updatedAt: string;
 }
 
-// News Types
+// ─── News Types ─────────────────────────────────────────────────────
+export type NewsCategory = "Transfer" | "Match Report" | "Interview" | "Analysis" | "Club News" | "General";
+
 export interface News {
   _id: string;
   club: string | Club;
+  author?: User;
   title: string;
   slug: string;
-  content: string;
   excerpt?: string;
+  content: string;
   cover?: string;
-  category?: string;
+  category?: NewsCategory;
   tags?: string[];
   isPublished: boolean;
+  publishedAt?: string;
   viewCount: number;
-  author?: User;
   createdAt: string;
   updatedAt: string;
 }
 
-// Gallery Types
+// ─── Gallery Types ──────────────────────────────────────────────────
 export type MediaType = "IMAGE" | "VIDEO";
+export type GalleryCategory = "Match" | "Training" | "Event" | "Team" | "Other";
 
 export interface Media {
   _id: string;
   url: string;
   type: MediaType;
   caption?: string;
+  uploadedBy?: string | User;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Gallery {
@@ -199,28 +281,40 @@ export interface Gallery {
   club: string | Club;
   title: string;
   description?: string;
-  category?: string;
+  category?: GalleryCategory;
+  coverImage?: string;
   media: Media[];
+  isPublished?: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-// Academy Types
+// ─── Academy Types ──────────────────────────────────────────────────
+export type AcademyAgeGroup = "SENIOR" | "U8" | "U10" | "U12" | "U14" | "U16" | "U18" | "U21";
+
+export interface AcademySchedule {
+  trainingDays?: string[];
+  trainingTime?: string;
+}
+
 export interface Academy {
   _id: string;
   club: string | Club;
   name: string;
-  ageGroup?: string;
+  description?: string;
+  ageGroup: AcademyAgeGroup;
   headCoach?: string | User;
-  schedule?: string;
+  photo?: string;
+  schedule?: AcademySchedule;
   players?: Player[];
+  isActive?: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-// Training Types
-export type TrainingType = "PRACTICE" | "TACTICAL" | "FITNESS" | "RECOVERY" | "OTHER";
-export type TrainingStatus = "SCHEDULED" | "COMPLETED" | "CANCELLED";
+// ─── Training Types ─────────────────────────────────────────────────
+export type TrainingType = "TACTICAL" | "PHYSICAL" | "TECHNICAL" | "RECOVERY" | "MIXED";
+export type TrainingStatus = "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 
 export interface TrainingSession {
   _id: string;
@@ -228,7 +322,11 @@ export interface TrainingSession {
   team: string | Team;
   title: string;
   date: string;
+  startTime?: string;
+  endTime?: string;
+  location?: string;
   type: TrainingType;
+  description?: string;
   coach?: string | User;
   status: TrainingStatus;
   attendance?: {
@@ -240,7 +338,7 @@ export interface TrainingSession {
   updatedAt: string;
 }
 
-// Member Types
+// ─── Member Types ───────────────────────────────────────────────────
 export type MembershipType = "FREE" | "BASIC" | "PREMIUM" | "VIP";
 
 export interface Member {
@@ -254,8 +352,15 @@ export interface Member {
   updatedAt: string;
 }
 
-// Statistics Types
-export type StatisticType = "GOALS" | "ASSISTS" | "CLEAN_SHEETS" | "YELLOW_CARDS" | "RED_CARDS" | "APPEARANCES" | "MINUTES_PLAYED";
+// ─── Statistics Types ───────────────────────────────────────────────
+export type StatisticType =
+  | "GOALS"
+  | "ASSISTS"
+  | "CLEAN_SHEETS"
+  | "YELLOW_CARDS"
+  | "RED_CARDS"
+  | "APPEARANCES"
+  | "MINUTES_PLAYED";
 
 export interface Statistic {
   _id: string;
@@ -270,7 +375,7 @@ export interface Statistic {
   updatedAt: string;
 }
 
-// API Response Types
+// ─── API Response Types ─────────────────────────────────────────────
 export interface ApiResponse<T> {
   success: boolean;
   data: T;
@@ -286,7 +391,8 @@ export interface PaginatedResponse<T> {
   results: number;
 }
 
-// Standings Types
+// ─── Standings Types ────────────────────────────────────────────────
+// Backend returns these directly from the statistics controller
 export interface Standing {
   team: Team;
   played: number;
@@ -297,13 +403,12 @@ export interface Standing {
   goalsAgainst: number;
   goalDifference: number;
   points: number;
-  position: number;
+  position?: number; // computed client-side from sort order
 }
 
-// Top Scorer Types
+// ─── Top Scorer Types ───────────────────────────────────────────────
+// Backend aggregation returns { player, goals } only
 export interface TopScorer {
   player: Player;
   goals: number;
-  assists: number;
-  appearances: number;
 }

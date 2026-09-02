@@ -22,7 +22,7 @@ export default function NewsDetailPage() {
     setLoading(true);
     try {
       const { data } = await api.get(`/news/${params.slug}`);
-      setArticle(data.data);
+      setArticle(data.data?.article || data.data);
     } catch (error) {
       console.error("Failed to fetch article:", error);
     } finally {
@@ -84,7 +84,7 @@ export default function NewsDetailPage() {
                 {article.viewCount} views
               </span>
             </div>
-          </div>
+        </div>
         </div>
 
         <h1 className="text-3xl md:text-4xl font-bold text-floodlight mb-4 font-display tracking-tight leading-tight">

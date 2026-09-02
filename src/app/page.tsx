@@ -8,15 +8,15 @@ import {
   FiChevronRight,
   FiUsers,
   FiCalendar,
-  FiCoffee,
   FiMapPin,
   FiStar,
   FiFileText,
   FiShield,
   FiZap,
 } from "react-icons/fi";
+import { Trophy } from "lucide-react";
 import api from "@/lib/api";
-import { Match, News, Player, Club } from "@/types";
+import { Match, News, Player, Club, Academy } from "@/types";
 import { Navbar, Footer } from "@/components/layout";
 import { Button } from "@/components/ui";
 import InfinitePhotoMarquee from "@/components/shared/InfinitePhotoMarquee";
@@ -105,6 +105,7 @@ export default function HomePage() {
   const [news, setNews] = useState<News[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
+  const [academies, setAcademies] = useState<Academy[]>([]);
   const [loading, setLoading] = useState(true);
 
   const heroRef = useRef<HTMLDivElement>(null);
@@ -116,17 +117,19 @@ export default function HomePage() {
 
   const fetchData = async () => {
     try {
-      const [clubsRes, newsRes, matchesRes, playersRes] = await Promise.allSettled([
+      const [clubsRes, newsRes, matchesRes, playersRes, academiesRes] = await Promise.allSettled([
         api.get("/clubs", { params: { limit: 1 } }),
         api.get("/news", { params: { limit: 5, sort: "-createdAt" } }),
         api.get("/matches", { params: { limit: 8, sort: "-matchDate" } }),
         api.get("/players", { params: { limit: 8 } }),
+        api.get("/academy", { params: { limit: 6 } }),
       ]);
       if (clubsRes.status === "fulfilled" && clubsRes.value.data.data.length > 0)
         setClub(clubsRes.value.data.data[0]);
       if (newsRes.status === "fulfilled") setNews(newsRes.value.data.data || []);
       if (matchesRes.status === "fulfilled") setMatches(matchesRes.value.data.data || []);
       if (playersRes.status === "fulfilled") setPlayers(playersRes.value.data.data || []);
+      if (academiesRes.status === "fulfilled") setAcademies(academiesRes.value.data.data || []);
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };
 
@@ -201,7 +204,7 @@ export default function HomePage() {
               {[
                 { icon: FiUsers, value: 25, suffix: "+", label: "Players" },
                 { icon: FiCalendar, value: 30, suffix: "+", label: "Matches This Season" },
-                { icon: FiCoffee, value: 12, suffix: "", label: "Trophies Won" },
+                { icon: Trophy, value: 12, suffix: "", label: "Trophies Won" },
                 { icon: FiMapPin, value: 1, suffix: "", label: "Home Ground" },
               ].map((s) => (
                 <motion.div key={s.label} variants={itemVariant} className="font-card text-center md:text-left">
@@ -298,7 +301,7 @@ export default function HomePage() {
                         <span className="text-sm text-floodlight group-hover:text-pitch-accent transition-colors">{getTeamName(m.homeTeam)}</span>
                       </div>
                       <span className="text-lg font-mono font-bold text-floodlight tabular-nums px-6">
-                        {m.homeScore}<span className="text-mist mx-1">–</span>{m.awayScore}
+                        {m.score.home}<span className="text-mist mx-1">–</span>{m.score.away}
                       </span>
                       <div className="flex items-center gap-6 flex-1 justify-end">
                         <span className="text-sm text-floodlight group-hover:text-pitch-accent transition-colors">{getTeamName(m.awayTeam)}</span>
@@ -405,12 +408,27 @@ export default function HomePage() {
 
               <Reveal direction="right">
                 <div className="font-card aspect-[4/3] bg-surface rounded-2xl border border-line/60 overflow-hidden animate-academy-photos">
-                  <div className="w-full h-full bg-gradient-to-br from-surface-raised to-surface flex items-center justify-center">
-                    <div className="text-center">
-                      <FiStar className="h-10 w-10 text-pitch-accent mx-auto mb-3" />
-                      <p className="text-mist text-sm">Academy Photos</p>
+                  {academies.length > 0 && academies[0].photo ? (
+                    <div className="relative w-full h-full">
+                      <img
+                        src={academies[0].photo}
+                        alt={academies[0].name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-pitch-night/60 via-transparent to-transparent" />
+                      <div className="absolute bottom-4 left-4 right-4">
+                        <p className="text-sm font-bold text-white">{academies[0].name}</p>
+                        <p className="text-xs text-white/60 font-mono">{academies[0].ageGroup}</p>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-surface-raised to-surface flex items-center justify-center">
+                      <div className="text-center">
+                        <FiStar className="h-10 w-10 text-pitch-accent mx-auto mb-3" />
+                        <p className="text-mist text-sm">Academy Photos</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </Reveal>
             </div>

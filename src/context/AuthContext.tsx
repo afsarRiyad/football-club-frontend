@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import api from "@/lib/api";
+import api, { setTokens, clearTokens, getAccessToken } from "@/lib/api";
 import { User, UserRole } from "@/types";
 
 interface AuthContextType {
@@ -20,9 +20,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // ── Restore session on mount ──────────────────────────────────────
   const fetchUser = useCallback(async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessToken();
       if (!token) {
         setLoading(false);
         return;
@@ -30,7 +31,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data } = await api.get("/auth/me");
       setUser(data.data.user);
     } catch {
-      localStorage.removeItem("token");
+      // Token invalid/expired and refresh failed — clear everything
+      clearTokens();
     } finally {
       setLoading(false);
     }
@@ -40,34 +42,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     fetchUser();
   }, [fetchUser]);
 
+  // ── Login ─────────────────────────────────────────────────────────
   const login = async (email: string, password: string) => {
     const { data } = await api.post("/auth/login", { email, password });
-    localStorage.setItem("token", data.token);
+
+    // Backend returns: { accessToken, refreshToken, data: { user } }
+    setTokens(data.accessToken, data.refreshToken);
+    api.defaults.headers.common.Authorization = `Bearer ${data.accessToken}`;
     setUser(data.data.user);
   };
 
+  // ── Register ──────────────────────────────────────────────────────
   const register = async (name: string, email: string, password: string) => {
     const { data } = await api.post("/auth/register", { name, email, password });
-    localStorage.setItem("token", data.token);
+
+    setTokens(data.accessToken, data.refreshToken);
+    api.defaults.headers.common.Authorization = `Bearer ${data.accessToken}`;
     setUser(data.data.user);
   };
 
+  // ── Logout ────────────────────────────────────────────────────────
   const logout = async () => {
     try {
       await api.post("/auth/logout");
     } finally {
-      localStorage.removeItem("token");
+      clearTokens();
+      delete api.defaults.headers.common.Authorization;
       setUser(null);
       window.location.href = "/login";
     }
   };
 
+  // ── Update local user state ───────────────────────────────────────
   const updateUser = (userData: Partial<User>) => {
     if (user) {
       setUser({ ...user, ...userData });
     }
   };
 
+  // ── Role check with hierarchy ─────────────────────────────────────
   const hasRole = (roles: UserRole[]) => {
     if (!user) return false;
     const roleHierarchy: UserRole[] = [

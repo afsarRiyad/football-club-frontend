@@ -74,9 +74,9 @@ export default function LiveMatchStrip() {
                     {getTeamName(match.homeTeam)}
                   </span>
                   <span className="text-sm font-mono font-bold text-floodlight tabular-nums">
-                    {match.homeScore}
+                    {match.score.home}
                     <span className="text-mist mx-1">-</span>
-                    {match.awayScore}
+                    {match.score.away}
                   </span>
                   <span className="text-xs text-mist truncate max-w-[80px]">
                     {getTeamName(match.awayTeam)}
