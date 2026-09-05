@@ -141,6 +141,7 @@ export interface Team {
   players?: Player[];
   formation?: string;
   startingXI?: StartingXIEntry[];
+  bench?: (string | Player)[];
   logo?: string;
   isActive?: boolean;
   createdAt: string;
@@ -156,6 +157,7 @@ export interface FormationSlot {
 
 export interface Formation {
   name: string;
+  playerCount: number; // 5, 7, 9, or 11
   slots: FormationSlot[];
 }
 
@@ -411,4 +413,20 @@ export interface Standing {
 export interface TopScorer {
   player: Player;
   goals: number;
+}
+
+// ─── Match Formation Types ────────────────────────────────────────────
+export interface MatchFormation {
+  _id: string;
+  club: string | Club;
+  match: string | Match;
+  team: string | Team;
+  formation: string;
+  playerCount: number; // 5, 7, 9, or 11
+  startingXI: { player: string | Player; position: string; slotIndex: number }[];
+  captain?: string | Player;
+  bench?: (string | Player)[];
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
 }

@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 const navLinks = [
   { href: "/squad", label: "Squad" },
   { href: "/matches", label: "Matches" },
+  { href: "/matchday-formation", label: "Lineup" },
   { href: "/competitions", label: "Competitions" },
   { href: "/standings", label: "Standings" },
   { href: "/news", label: "News" },
@@ -32,13 +33,13 @@ export default function Navbar() {
           <div className="flex items-center justify-between h-14">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 shrink-0">
-              <div className="h-7 w-7 bg-club-primary rounded-md flex items-center justify-center">
-                <span className="text-white font-bold text-sm font-display">
-                  F
-                </span>
-              </div>
+              <img
+                src="/logo.png"
+                alt="N.S Club Logo"
+                className="h-8 w-auto object-contain"
+              />
               <span className="text-lg font-bold text-text-primary font-display tracking-tight hidden sm:block">
-                FClub
+                N.S Club
               </span>
             </Link>
 

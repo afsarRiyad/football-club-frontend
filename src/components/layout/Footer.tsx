@@ -12,13 +12,13 @@ export default function Footer() {
           {/* Brand */}
           <div className="space-y-4">
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="h-8 w-8 bg-pitch-accent rounded-lg flex items-center justify-center">
-                <span className="text-pitch-night font-bold text-lg font-display">
-                  F
-                </span>
-              </div>
+              <img
+                src="/logo.png"
+                alt="N.S Club Logo"
+                className="h-10 w-auto object-contain"
+              />
               <span className="text-xl font-bold text-floodlight font-display tracking-tight">
-                FClub
+                N.S Club
               </span>
             </Link>
             <p className="text-sm text-mist/80">
@@ -127,10 +127,8 @@ export default function Footer() {
               </li>
             </ul>
           </div>
-        </div>
-
-        <div className="border-t border-line mt-8 pt-8 text-center text-sm text-mist/60">
-          <p>&copy; {new Date().getFullYear()} FClub. All rights reserved.</p>
+        </div>          <div className="border-t border-line mt-8 pt-8 text-center text-sm text-mist/60">
+          <p>&copy; {new Date().getFullYear()} N.S Club. All rights reserved.</p>
         </div>
       </div>
     </footer>

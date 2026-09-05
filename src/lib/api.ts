@@ -81,13 +81,14 @@ api.interceptors.response.use(
       _retry?: boolean;
     };
 
-    // Only handle 401, skip if already retried or if it's a refresh request itself
+    // Only handle 401, skip if already retried or if it's an auth request
     if (
       error.response?.status !== 401 ||
       originalRequest._retry ||
       originalRequest.url === "/auth/refresh-token" ||
       originalRequest.url === "/auth/login" ||
-      originalRequest.url === "/auth/register"
+      originalRequest.url === "/auth/register" ||
+      originalRequest.url === "/auth/me"
     ) {
       return Promise.reject(error);
     }

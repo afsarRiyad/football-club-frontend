@@ -13,9 +13,9 @@ interface MatchCardProps {
   match: Match;
 }
 
-function getTeamName(team: string | Team): string {
-  if (typeof team === "string") return "TBD";
-  return team.name;
+function getTeamName(team: string | Team | null): string {
+  if (!team || typeof team === "string") return "TBD";
+  return team.name || "TBD";
 }
 
 export default function MatchCard({ match }: MatchCardProps) {

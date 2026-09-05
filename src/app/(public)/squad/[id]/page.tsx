@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Calendar, Ruler, Weight, Shirt, MapPin, Footprints } from "lucide-react";
+import { ArrowLeft, Calendar, Ruler, Weight, Shirt, MapPin, Footprints, Trophy, TrendingUp, BarChart3 } from "lucide-react";
 import api from "@/lib/api";
 import { Player, Statistic, StatisticType } from "@/types";
 import { PageSpinner } from "@/components/ui";
@@ -76,6 +76,42 @@ function aggregateStats(stats: Statistic[], playerId: string) {
   };
 }
 
+function aggregateStatsBySeason(stats: Statistic[], playerId: string) {
+  const playerStats = stats.filter((s) => {
+    const pid = typeof s.player === "string" ? s.player : s.player?._id;
+    return pid === playerId;
+  });
+
+  const seasonMap = new Map<string, Statistic[]>();
+  for (const s of playerStats) {
+    const seasonKey = s.season || "all-time";
+    if (!seasonMap.has(seasonKey)) seasonMap.set(seasonKey, []);
+    seasonMap.get(seasonKey)!.push(s);
+  }
+
+  const results: { seasonId: string; seasonLabel: string; stats: ReturnType<typeof aggregateStats> }[] = [];
+
+  for (const [seasonId, seasonStats] of seasonMap) {
+    const get = (type: StatisticType) =>
+      seasonStats.filter((s) => s.type === type).reduce((sum, s) => sum + s.value, 0);
+    results.push({
+      seasonId,
+      seasonLabel: seasonId === "all-time" ? "All Time" : seasonId,
+      stats: {
+        goals: get("GOALS"),
+        assists: get("ASSISTS"),
+        appearances: get("APPEARANCES"),
+        minutesPlayed: get("MINUTES_PLAYED"),
+        cleanSheets: get("CLEAN_SHEETS"),
+        yellowCards: get("YELLOW_CARDS"),
+        redCards: get("RED_CARDS"),
+      },
+    });
+  }
+
+  return results;
+}
+
 export default function PlayerProfilePage() {
   const params = useParams();
   const [player, setPlayer] = useState<Player | null>(null);
@@ -123,7 +159,15 @@ export default function PlayerProfilePage() {
     : null;
   const ovr = calcOVR(player);
   const career = aggregateStats(statistics, player._id);
+  const seasonBreakdown = aggregateStatsBySeason(statistics, player._id);
   const pos = player.position;
+
+  // Season field is a plain string like "2025/26", use it directly
+  // Separate "all-time" (no season set) from named seasons, sort descending
+  const namedSeasons = seasonBreakdown
+    .filter((s) => s.seasonId !== "all-time")
+    .sort((a, b) => b.seasonLabel.localeCompare(a.seasonLabel));
+  const hasSeasonData = namedSeasons.length > 0;
 
   const faceStats = pos === "GOALKEEPER"
     ? [
@@ -347,6 +391,258 @@ export default function PlayerProfilePage() {
           ))}
         </div>
       </div>
+
+      {/* Season-by-Season Breakdown */}
+      {hasSeasonData && (
+        <div className="mt-12">
+          <div className="flex items-center gap-3 mb-6">
+            <Trophy className="h-4 w-4 text-club-gold" />
+            <span className="text-sm font-mono font-bold text-club-accent uppercase tracking-widest">
+              Season by Season
+            </span>
+            <span className="h-px flex-1 bg-line" />
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-line/40">
+                  <th className="text-left py-3 px-3 text-[10px] font-mono font-bold text-mist uppercase tracking-wider">Season</th>
+                  <th className="text-center py-3 px-2 text-[10px] font-mono font-bold text-mist uppercase tracking-wider">Apps</th>
+                  <th className="text-center py-3 px-2 text-[10px] font-mono font-bold text-pitch-accent uppercase tracking-wider">Goals</th>
+                  <th className="text-center py-3 px-2 text-[10px] font-mono font-bold text-mist uppercase tracking-wider">Assists</th>
+                  <th className="text-center py-3 px-2 text-[10px] font-mono font-bold text-mist uppercase tracking-wider">Minutes</th>
+                  {pos === "GOALKEEPER" && (
+                    <th className="text-center py-3 px-2 text-[10px] font-mono font-bold text-card-gold uppercase tracking-wider">CS</th>
+                  )}
+                  <th className="text-center py-3 px-2 text-[10px] font-mono font-bold text-yellow-400 uppercase tracking-wider">YC</th>
+                  <th className="text-center py-3 px-2 text-[10px] font-mono font-bold text-red-400 uppercase tracking-wider">RC</th>
+                  {pos !== "GOALKEEPER" && (
+                    <th className="text-center py-3 px-2 text-[10px] font-mono font-bold text-mist uppercase tracking-wider">G+A</th>
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {namedSeasons.map((row) => (
+                  <tr key={row.seasonId} className="border-b border-line/20 hover:bg-surface/60 transition-colors">
+                    <td className="py-3 px-3 text-floodlight font-medium">{row.seasonLabel}</td>
+                    <td className="py-3 px-2 text-center font-mono text-floodlight">{row.stats.appearances || "-"}</td>
+                    <td className="py-3 px-2 text-center font-mono font-bold text-pitch-accent">{row.stats.goals || "-"}</td>
+                    <td className="py-3 px-2 text-center font-mono text-floodlight">{row.stats.assists || "-"}</td>
+                    <td className="py-3 px-2 text-center font-mono text-mist">{row.stats.minutesPlayed || "-"}</td>
+                    {pos === "GOALKEEPER" && (
+                      <td className="py-3 px-2 text-center font-mono text-card-gold">{row.stats.cleanSheets || "-"}</td>
+                    )}
+                    <td className="py-3 px-2 text-center font-mono text-yellow-400">{row.stats.yellowCards || "-"}</td>
+                    <td className="py-3 px-2 text-center font-mono text-red-400">{row.stats.redCards || "-"}</td>
+                    {pos !== "GOALKEEPER" && (
+                      <td className="py-3 px-2 text-center font-mono font-bold text-floodlight">{row.stats.goals + row.stats.assists || "-"}</td>
+                    )}
+                  </tr>
+                ))}
+                {/* Totals row */}
+                <tr className="bg-surface/40">
+                  <td className="py-3 px-3 text-floodlight font-bold font-display">Career Total</td>
+                  <td className="py-3 px-2 text-center font-mono font-bold text-floodlight">{career.appearances || "-"}</td>
+                  <td className="py-3 px-2 text-center font-mono font-bold text-pitch-accent">{career.goals || "-"}</td>
+                  <td className="py-3 px-2 text-center font-mono font-bold text-floodlight">{career.assists || "-"}</td>
+                  <td className="py-3 px-2 text-center font-mono font-bold text-mist">{career.minutesPlayed || "-"}</td>
+                  {pos === "GOALKEEPER" && (
+                    <td className="py-3 px-2 text-center font-mono font-bold text-card-gold">{career.cleanSheets || "-"}</td>
+                  )}
+                  <td className="py-3 px-2 text-center font-mono font-bold text-yellow-400">{career.yellowCards || "-"}</td>
+                  <td className="py-3 px-2 text-center font-mono font-bold text-red-400">{career.redCards || "-"}</td>
+                  {pos !== "GOALKEEPER" && (
+                    <td className="py-3 px-2 text-center font-mono font-bold text-floodlight">{career.goals + career.assists || "-"}</td>
+                  )}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-3">
+            {namedSeasons.map((row) => (
+              <div key={row.seasonId} className="bg-surface rounded-xl border border-line/30 p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-floodlight font-bold text-sm">{row.seasonLabel}</span>
+                  {pos !== "GOALKEEPER" && (
+                    <span className="text-xs font-mono text-pitch-accent font-bold">
+                      {row.stats.goals + row.stats.assists} G+A
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  <div className="text-center">
+                    <p className="text-lg font-black font-mono text-floodlight">{row.stats.appearances || "-"}</p>
+                    <p className="text-[9px] text-mist font-mono uppercase">Apps</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-black font-mono text-pitch-accent">{row.stats.goals || "-"}</p>
+                    <p className="text-[9px] text-mist font-mono uppercase">Goals</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-black font-mono text-floodlight">{row.stats.assists || "-"}</p>
+                    <p className="text-[9px] text-mist font-mono uppercase">Assists</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-lg font-black font-mono text-mist">{row.stats.minutesPlayed || "-"}</p>
+                    <p className="text-[9px] text-mist font-mono uppercase">Minutes</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Goals & Assists Bar Chart */}
+          {(() => {
+            const maxVal = Math.max(...namedSeasons.map((s) => Math.max(s.stats.goals, s.stats.assists, 1)), 1);
+            return (
+              <div className="mt-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <BarChart3 className="h-4 w-4 text-club-accent" />
+                  <span className="text-[10px] font-mono font-bold text-mist uppercase tracking-widest">
+                    Goals vs Assists by Season
+                  </span>
+                  <span className="h-px flex-1 bg-line" />
+                </div>
+
+                {/* Legend */}
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-sm bg-club-accent" />
+                    <span className="text-[10px] font-mono text-mist">Goals</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-sm bg-pitch-green" />
+                    <span className="text-[10px] font-mono text-mist">Assists</span>
+                  </div>
+                </div>
+
+                {/* Chart */}
+                <div className="bg-surface rounded-xl border border-line/30 p-4 sm:p-6">
+                  <div className="flex items-end gap-3 sm:gap-5" style={{ height: 200 }}>
+                    {namedSeasons.map((row) => {
+                      const goalH = maxVal > 0 ? (row.stats.goals / maxVal) * 100 : 0;
+                      const assistH = maxVal > 0 ? (row.stats.assists / maxVal) * 100 : 0;
+                      return (
+                        <div key={row.seasonId} className="flex-1 flex flex-col items-center justify-end h-full">
+                          <div className="flex items-end gap-1 mb-1" style={{ minHeight: 24 }}>
+                            <span className="text-[10px] font-mono font-bold text-club-accent w-5 text-center">
+                              {row.stats.goals || ""}
+                            </span>
+                            <span className="text-[10px] font-mono font-bold text-pitch-green w-5 text-center">
+                              {row.stats.assists || ""}
+                            </span>
+                          </div>
+                          <div className="flex items-end gap-1 w-full" style={{ height: 160 }}>
+                            <div className="flex-1 flex justify-center">
+                              <div
+                                className="w-full max-w-[28px] rounded-t-md bg-club-accent transition-all duration-500"
+                                style={{ height: `${Math.max(goalH, 2)}%` }}
+                              />
+                            </div>
+                            <div className="flex-1 flex justify-center">
+                              <div
+                                className="w-full max-w-[28px] rounded-t-md bg-pitch-green transition-all duration-500"
+                                style={{ height: `${Math.max(assistH, 2)}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex gap-3 sm:gap-5 mt-3">
+                    {namedSeasons.map((row) => (
+                      <div key={row.seasonId} className="flex-1 text-center">
+                        <span className="text-[9px] sm:text-[10px] font-mono text-mist truncate block">
+                          {row.seasonLabel}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Appearances & Minutes Bar Chart */}
+          {(() => {
+            const maxApps = Math.max(...namedSeasons.map((s) => s.stats.appearances || 0), 1);
+            const maxMins = Math.max(...namedSeasons.map((s) => s.stats.minutesPlayed || 0), 1);
+            return (
+              <div className="mt-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <BarChart3 className="h-4 w-4 text-club-gold" />
+                  <span className="text-[10px] font-mono font-bold text-mist uppercase tracking-widest">
+                    Appearances & Minutes by Season
+                  </span>
+                  <span className="h-px flex-1 bg-line" />
+                </div>
+
+                {/* Legend */}
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-sm bg-blue-500" />
+                    <span className="text-[10px] font-mono text-mist">Appearances</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-3 h-3 rounded-sm bg-amber-400" />
+                    <span className="text-[10px] font-mono text-mist">Minutes (÷10)</span>
+                  </div>
+                </div>
+
+                {/* Chart */}
+                <div className="bg-surface rounded-xl border border-line/30 p-4 sm:p-6">
+                  <div className="flex items-end gap-3 sm:gap-5" style={{ height: 200 }}>
+                    {namedSeasons.map((row) => {
+                      const appsH = (row.stats.appearances / maxApps) * 100;
+                      const minsH = (row.stats.minutesPlayed / 10 / maxApps) * 100;
+                      return (
+                        <div key={row.seasonId} className="flex-1 flex flex-col items-center justify-end h-full">
+                          <div className="flex items-end gap-1 mb-1" style={{ minHeight: 24 }}>
+                            <span className="text-[10px] font-mono font-bold text-blue-500 w-5 text-center">
+                              {row.stats.appearances || ""}
+                            </span>
+                            <span className="text-[10px] font-mono font-bold text-amber-500 w-10 text-center">
+                              {row.stats.minutesPlayed || ""}
+                            </span>
+                          </div>
+                          <div className="flex items-end gap-1 w-full" style={{ height: 160 }}>
+                            <div className="flex-1 flex justify-center">
+                              <div
+                                className="w-full max-w-[28px] rounded-t-md bg-blue-500 transition-all duration-500"
+                                style={{ height: `${Math.max(appsH, 2)}%` }}
+                              />
+                            </div>
+                            <div className="flex-1 flex justify-center">
+                              <div
+                                className="w-full max-w-[28px] rounded-t-md bg-amber-400 transition-all duration-500"
+                                style={{ height: `${Math.max(minsH, 2)}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex gap-3 sm:gap-5 mt-3">
+                    {namedSeasons.map((row) => (
+                      <div key={row.seasonId} className="flex-1 text-center">
+                        <span className="text-[9px] sm:text-[10px] font-mono text-mist truncate block">
+                          {row.seasonLabel}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
     </div>
   );
 }

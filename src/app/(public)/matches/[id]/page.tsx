@@ -121,11 +121,29 @@ export default function MatchDetailPage() {
   const isLive = match.status === "LIVE" || match.status === "HT";
   const isFinished = match.status === "FT";
 
-  // Split events by team (home events first, away events second in timeline)
-  const homeEvents = match.events.filter((e) => {
-    // We'll show all events in chronological order for simplicity
-    return true;
-  });
+  // Extract goals and assists — filter out null player objects
+  const homeGoals = match.events
+    .filter((e) => e.type === "GOAL" && e.player && typeof e.player === "object" && (e.player as any).firstName)
+    .map((e) => ({
+      player: e.player as any,
+      assist: e.assist && typeof e.assist === "object" && (e.assist as any).firstName ? (e.assist as any) : null,
+      minute: e.minute,
+    }));
+  const awayGoals = match.events
+    .filter((e) => e.type === "GOAL" && e.player && typeof e.player === "object" && (e.player as any).firstName)
+    .map((e) => ({
+      player: e.player as any,
+      assist: e.assist && typeof e.assist === "object" && (e.assist as any).firstName ? (e.assist as any) : null,
+      minute: e.minute,
+    }));
+  // For goals stored as description (typed name for opponent)
+  const goalsFromDesc = match.events
+    .filter((e) => e.type === "GOAL" && typeof e.player === "string")
+    .map((e) => ({
+      playerName: e.player as string,
+      assistName: e.description?.includes("assist:") ? e.description.split("assist:")[1]?.trim() : null,
+      minute: e.minute,
+    }));
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -176,6 +194,21 @@ export default function MatchDetailPage() {
               <div className="text-center md:text-right">
                 <h2 className="text-xl md:text-2xl font-bold text-floodlight font-display">{homeName}</h2>
                 <p className="text-[10px] text-mist font-mono uppercase tracking-wider">Home</p>
+                {/* Home goalscorers */}
+                {homeGoals.length > 0 && (
+                  <div className="mt-2 space-y-0.5">
+                    {homeGoals.map((g, i) => (
+                      <div key={i} className="flex items-center gap-1.5 justify-center md:justify-end text-[11px]">
+                        <span>⚽</span>
+                        <span className="font-medium text-floodlight">{g.player.firstName} {g.player.lastName}</span>
+                        {g.assist && (
+                          <span className="text-mist">(assist: {g.assist.firstName} {g.assist.lastName})</span>
+                        )}
+                        {g.minute != null && <span className="text-mist font-mono text-[10px]">{g.minute}'</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -199,6 +232,31 @@ export default function MatchDetailPage() {
               <div className="text-center md:text-left">
                 <h2 className="text-xl md:text-2xl font-bold text-floodlight font-display">{awayName}</h2>
                 <p className="text-[10px] text-mist font-mono uppercase tracking-wider">Away</p>
+                {/* Away goalscorers */}
+                {(awayGoals.length > 0 || goalsFromDesc.length > 0) && (
+                  <div className="mt-2 space-y-0.5">
+                    {awayGoals.map((g, i) => (
+                      <div key={`obj-${i}`} className="flex items-center gap-1.5 justify-center md:justify-start text-[11px]">
+                        {g.minute != null && <span className="text-mist font-mono text-[10px]">{g.minute}'</span>}
+                        <span>⚽</span>
+                        <span className="font-medium text-floodlight">{g.player.firstName} {g.player.lastName}</span>
+                        {g.assist && (
+                          <span className="text-mist">(assist: {g.assist.firstName} {g.assist.lastName})</span>
+                        )}
+                      </div>
+                    ))}
+                    {goalsFromDesc.map((g, i) => (
+                      <div key={`desc-${i}`} className="flex items-center gap-1.5 justify-center md:justify-start text-[11px]">
+                        {g.minute != null && <span className="text-mist font-mono text-[10px]">{g.minute}'</span>}
+                        <span>⚽</span>
+                        <span className="font-medium text-floodlight">{g.playerName}</span>
+                        {g.assistName && (
+                          <span className="text-mist">(assist: {g.assistName})</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               {awayLogo ? (
                 <img src={awayLogo} alt={awayName} className="w-16 h-16 md:w-20 md:h-20 rounded-full object-contain border border-line/30" />

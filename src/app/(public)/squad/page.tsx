@@ -1,15 +1,16 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
-import { Player, Statistic, Team, Formation, Match, StartingXIEntry } from "@/types";
+import { Player, Statistic, Team, Formation, Match, StartingXIEntry, MatchFormation } from "@/types";
 import { PageSpinner } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import PitchFormation from "@/components/shared/PitchFormation";
 import PlayerRevealCard from "@/components/shared/PlayerRevealCard";
 import { getFormation, FORMATION_OPTIONS } from "@/lib/formations";
+import { getSocket, connectSocket } from "@/lib/socket";
 import { motion } from "framer-motion";
 import { Calendar, MapPin, Trophy, Clock } from "lucide-react";
 
@@ -53,6 +54,38 @@ const gridItemVariants = {
   }),
 };
 
+/* ── Touch/swipe hook for horizontal scroll ── */
+function useSwipeScroll(ref: React.RefObject<HTMLDivElement | null>) {
+  const [translateX, setTranslateX] = useState(0);
+  const startX = useRef<number>(0);
+  const currentX = useRef<number>(0);
+  const isDragging = useRef<boolean>(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startX.current = e.touches[0].clientX;
+    currentX.current = 0;
+    isDragging.current = true;
+    setTranslateX(0);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging.current) return;
+    const delta = e.touches[0].clientX - startX.current;
+    currentX.current = delta;
+    setTranslateX(delta);
+  };
+
+  const handleTouchEnd = () => {
+    isDragging.current = false;
+    // Snap back if movement was small
+    if (Math.abs(currentX.current) < 30) {
+      setTranslateX(0);
+    }
+  };
+
+  return { translateX, handleTouchStart, handleTouchMove, handleTouchEnd };
+}
+
 function getPlayerName(p: Player) {
   return `${p.firstName} ${p.lastName}`;
 }
@@ -79,8 +112,8 @@ function formatMatchDate(dateStr: string): string {
 }
 
 /* ── Get team name from match ── */
-function getTeamName(team: string | Team): string {
-  if (typeof team === "string") return "TBD";
+function getTeamName(team: string | Team | null): string {
+  if (!team || typeof team === "string") return "TBD";
   return team.name || "TBD";
 }
 
@@ -200,6 +233,8 @@ export default function SquadPage() {
   const [loading, setLoading] = useState(true);
   const [position, setPosition] = useState("MATCHDAY");
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const { translateX, handleTouchStart, handleTouchMove, handleTouchEnd } = useSwipeScroll(scrollRef);
 
   // Click handler: flip card for formation/matchday, navigate for position views
   const handlePlayerClick = (player: Player) => {
@@ -214,33 +249,135 @@ export default function SquadPage() {
   // Formation state
   const [formationName, setFormationName] = useState<string>("4-3-3");
   const [formation, setFormation] = useState<Formation>(getFormation("4-3-3"));
+  const [teamFormationName, setTeamFormationName] = useState<string>("4-3-3");
 
   // Team / captain / startingXI state
   const [captainId, setCaptainId] = useState<string | null>(null);
   const [viceCaptainId, setViceCaptainId] = useState<string | null>(null);
   const [teamStartingXI, setTeamStartingXI] = useState<StartingXIEntry[]>([]);
+  const [teamPlayerIds, setTeamPlayerIds] = useState<Set<string>>(new Set());
+  const [teamBench, setTeamBench] = useState<Player[]>([]);
 
   // Next match state
   const [nextMatch, setNextMatch] = useState<Match | null>(null);
-  const [loadingMatch, setLoadingMatch] = useState(true);
+  const [loadingMatch, setLoadingMatch] = useState(true);  // Match formation state (from MatchFormation API)
+  const [matchFormation, setMatchFormation] = useState<MatchFormation | null>(null);
+
+  // Refs for socket room management
+  const currentMatchIdRef = useRef<string>("");
+  const currentTeamIdRef = useRef<string>("");
+
+  // Helper: re-fetch match formation for the current match
+  // Uses the /match/:matchId endpoint (returns all formations for the match)
+  // then picks the one matching our team
+  const refreshMatchFormation = useCallback(async (matchId?: string, teamId?: string) => {
+    const mid = matchId || currentMatchIdRef.current;
+    const tid = teamId || currentTeamIdRef.current;
+    if (!mid) return;
+    try {
+      console.log("[Squad] refreshMatchFormation: matchId=", mid, "teamId=", tid);
+      const mfRes = await api.get(`/match-formations/match/${mid}`);
+      const formations: MatchFormation[] = mfRes.data?.data || [];
+      console.log("[Squad] API returned formations:", formations.length, formations.map((f) => ({
+        team: typeof f.team === "object" ? f.team.name : f.team,
+        teamId: typeof f.team === "object" ? f.team._id : f.team,
+        formation: f.formation,
+        xi: f.startingXI?.length,
+        bench: f.bench?.length,
+      })));
+      // Find the formation for our team
+      const mfData = tid
+        ? formations.find((f) => {
+            const fTeamId = typeof f.team === "object" ? f.team._id : f.team;
+            return fTeamId === tid;
+          })
+        : formations[0];
+      console.log("[Squad] Matched formation:", mfData ? { formation: mfData.formation, xi: mfData.startingXI?.length, bench: mfData.bench?.length } : "NONE");
+      if (mfData) {
+        setMatchFormation(mfData);
+        if (mfData.formation) setFormationName(mfData.formation);
+        const cap = mfData.captain;
+        if (cap && typeof cap === "object" && cap._id) setCaptainId(cap._id);
+      } else {
+        setMatchFormation(null);
+      }
+    } catch (e) {
+      console.error("[Squad] refreshMatchFormation FAILED:", e);
+      setMatchFormation(null);
+    }
+  }, []);
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  // Update formation when name changes
+  // Re-fetch formations when page regains focus (to handle tab switching from admin)
   useEffect(() => {
-    setFormation(getFormation(formationName));
-  }, [formationName]);
+    const handleVisibilityChange = () => {
+      if (!document.hidden && currentMatchIdRef.current) {
+        console.log("[Squad] Page visible — re-fetching match formation");
+        refreshMatchFormation(currentMatchIdRef.current, currentTeamIdRef.current);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [refreshMatchFormation]);
+
+  // Update formation when name changes — use teamFormationName for Formation tab, formationName for Matchday
+  useEffect(() => {
+    const activeName = position === "FORMATION" ? teamFormationName : formationName;
+    setFormation(getFormation(activeName));
+  }, [formationName, teamFormationName, position]);
+
+  // Socket connection for real-time formation updates
+  useEffect(() => {
+    const socket = connectSocket();
+
+    const handleConnect = () => {
+      console.log("[Squad] Socket connected, joining room for match:", currentMatchIdRef.current);
+      if (currentMatchIdRef.current) {
+        socket.emit("formation:join", currentMatchIdRef.current);
+      }
+    };
+
+    const handleFormationUpdate = (data: { matchId: string; teamId: string }) => {
+      console.log("[Squad] Socket received formation:update", data);
+      if (data.matchId === currentMatchIdRef.current) {
+        // Re-fetch all formations for this match, then pick ours
+        refreshMatchFormation(data.matchId, currentTeamIdRef.current);
+      }
+    };
+
+    const handleFormationDeleted = (data: { matchId: string; teamId: string }) => {
+      console.log("[Squad] Socket received formation:deleted", data);
+      if (data.matchId === currentMatchIdRef.current) {
+        refreshMatchFormation(data.matchId, currentTeamIdRef.current);
+      }
+    };
+
+    socket.on("connect", handleConnect);
+    socket.on("formation:update", handleFormationUpdate);
+    socket.on("formation:deleted", handleFormationDeleted);
+
+    return () => {
+      socket.off("connect", handleConnect);
+      socket.off("formation:update", handleFormationUpdate);
+      socket.off("formation:deleted", handleFormationDeleted);
+      if (currentMatchIdRef.current) {
+        socket.emit("formation:leave", currentMatchIdRef.current);
+      }
+    };
+  }, [refreshMatchFormation]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [playersRes, statsRes, teamRes, matchRes] = await Promise.allSettled([
+      const [playersRes, statsRes, teamRes, matchRes, liveMatchRes] = await Promise.allSettled([
         api.get("/players", { params: { limit: 50, sort: "lastName" } }),
         api.get("/statistics", { params: { limit: 500 } }),
-        api.get("/teams", { params: { limit: 1 } }),
-        api.get("/matches", { params: { status: "SCHEDULED", sort: "matchDate", limit: 1 } }),
+        api.get("/teams", { params: { limit: 10 } }),
+        api.get("/matches", { params: { status: "SCHEDULED", sort: "matchDate", limit: 5 } }),
+        api.get("/matches", { params: { status: "LIVE", sort: "matchDate", limit: 5 } }),
       ]);
 
       if (playersRes.status === "fulfilled") {
@@ -260,11 +397,16 @@ export default function SquadPage() {
       if (!captainId) setCaptainId("p10"); // Haaland as captain
       if (!viceCaptainId) setViceCaptainId("p03"); // Van Dijk as vice
 
-      // Extract captain from team data
+      // Extract captain from team data — prefer SENIOR team
+      let firstTeamId: string | null = null;
       if (teamRes.status === "fulfilled") {
-        const teams = teamRes.value.data.data;
-        const team: Team | undefined = Array.isArray(teams) ? teams[0] : teams;
+        const allTeams: Team[] = teamRes.value.data.data || [];
+        const team: Team | undefined =
+          (Array.isArray(allTeams) ? allTeams : []).find((t) => t.category === "SENIOR") ||
+          (Array.isArray(allTeams) ? allTeams[0] : undefined);
         if (team) {
+          firstTeamId = typeof team._id === "string" ? team._id : null;
+
           const cap = team.captain;
           if (typeof cap === "string") setCaptainId(cap);
           else if (cap && typeof cap === "object") setCaptainId(cap._id);
@@ -274,25 +416,54 @@ export default function SquadPage() {
           else if (vc && typeof vc === "object") setViceCaptainId(vc._id);
 
           if (team.formation && FORMATION_OPTIONS.includes(team.formation)) {
-            setFormationName(team.formation);
+            setTeamFormationName(team.formation);
           }
 
           // Use admin-set starting XI if available
           if ((team as any).startingXI && (team as any).startingXI.length > 0) {
             setTeamStartingXI((team as any).startingXI);
           }
+
+          // Load bench players from team data
+          if ((team as any).bench && (team as any).bench.length > 0) {
+            const bench = (team as any).bench
+              .filter((p: any) => p && p._id)
+              .map((p: any) => (typeof p === "object" ? p : null))
+              .filter(Boolean);
+            setTeamBench(bench);
+          }
+
+          // Track team player IDs for filtering reserves
+          const tPlayerIds = (team.players || []).map((p: any) => {
+            if (typeof p === "string") return p;
+            if (typeof p === "object" && p._id) return p._id;
+            return null;
+          }).filter(Boolean) as string[];
+          setTeamPlayerIds(new Set(tPlayerIds));
         }
       }
 
+      // Next match + match formation
+      // Prefer SCHEDULED, then fall back to LIVE
+      const scheduledMatchList = matchRes.status === "fulfilled" ? (matchRes.value.data.data || []) : [];
+      const liveMatchList = liveMatchRes.status === "fulfilled" ? (liveMatchRes.value.data.data || []) : [];
+      const allUpcoming = [...scheduledMatchList, ...liveMatchList.filter((lm: any) => !scheduledMatchList.some((sm: any) => sm._id === lm._id))];
+      const match = allUpcoming.length > 0 ? allUpcoming[0] : null;
+      if (match && (match.status === "SCHEDULED" || match.status === "LIVE")) {
+        setNextMatch(match);
 
+        // Store IDs for socket room management
+        currentMatchIdRef.current = match._id;
+        if (firstTeamId) currentTeamIdRef.current = firstTeamId;
+        console.log("[Squad] Next match:", { matchId: match._id, status: match.status, teamId: firstTeamId });
 
-      // Next match
-      if (matchRes.status === "fulfilled") {
-        const matches = matchRes.value.data.data;
-        const match = Array.isArray(matches) ? matches[0] : matches;
-        if (match && match.status === "SCHEDULED") {
-          setNextMatch(match);
-        }
+        // Join socket formation room for real-time updates
+        const socket = getSocket();
+        socket.emit("formation:join", currentMatchIdRef.current);
+
+        // Fetch match formation for this match (admin-set lineup)
+        // First try with our team ID, then fall back to any formation for the match
+        await refreshMatchFormation(match._id, firstTeamId || undefined);
       }
     } catch (e) {
       console.error("Failed to fetch data:", e);
@@ -302,10 +473,20 @@ export default function SquadPage() {
     }
   };
 
-  // Build starters: use admin-set startingXI if available, otherwise auto-pick
+  // Build starters: prefer match formation, then team startingXI, then auto-pick
   const starters = useMemo(() => {
+    // 1. Match formation (admin-set per match)
+    if (matchFormation && matchFormation.startingXI && matchFormation.startingXI.length > 0) {
+      return matchFormation.startingXI
+        .sort((a, b) => a.slotIndex - b.slotIndex)
+        .map((entry) => {
+          const pid = typeof entry.player === "string" ? entry.player : (entry.player as Player)._id;
+          return players.find((p) => p._id === pid);
+        })
+        .filter(Boolean) as Player[];
+    }
+    // 2. Team startingXI (admin-set default)
     if (teamStartingXI.length > 0) {
-      // Map startingXI entries to Player objects
       return teamStartingXI
         .sort((a, b) => a.slotIndex - b.slotIndex)
         .map((entry) => {
@@ -314,12 +495,33 @@ export default function SquadPage() {
         })
         .filter(Boolean) as Player[];
     }
-    // Fallback: auto-pick by position priority
+    // 3. Auto-pick by position priority
     return getStarters(players, formation);
-  }, [teamStartingXI, players, formation]);
+  }, [matchFormation, teamStartingXI, players, formation]);
+
+  // Build bench: prefer match formation, then team bench
+  const benchPlayers = useMemo(() => {
+    // 1. Match formation bench (admin-set per match)
+    if (matchFormation && matchFormation.bench && matchFormation.bench.length > 0) {
+      return matchFormation.bench
+        .map((p) => {
+          const pid = typeof p === "string" ? p : (p as Player)._id;
+          return players.find((pl) => pl._id === pid);
+        })
+        .filter(Boolean) as Player[];
+    }
+    // 2. Team bench (admin-set default)
+    if (teamBench.length > 0) {
+      return teamBench
+        .map((p) => players.find((pl) => pl._id === p._id))
+        .filter(Boolean) as Player[];
+    }
+    return [];
+  }, [matchFormation, teamBench, players]);
 
   const starterIds = new Set(starters.map((p) => p._id));
-  const reserves = players.filter((p) => !starterIds.has(p._id));
+  // Only show team members as reserves (not all club players)
+  const reserves = players.filter((p) => !starterIds.has(p._id) && (teamPlayerIds.size === 0 || teamPlayerIds.has(p._id)));
 
   // Group by position
   const grouped = players.reduce((acc, p) => {
@@ -478,7 +680,34 @@ export default function SquadPage() {
               viceCaptainId={viceCaptainId}
               matchDayMode
               onSelectPlayer={setSelectedPlayer}
-            />
+            />            {/* Bench / Reserves */}
+            {benchPlayers.length > 0 && (
+              <div className="mt-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-xs font-mono text-card-gold uppercase tracking-widest">
+                    Bench / Reserves ({benchPlayers.length})
+                  </span>
+                  <span className="h-px flex-1 bg-line/40" />
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  {benchPlayers.map((player, i) => (
+                    <motion.div
+                      key={`bench-${player._id}`}
+                      custom={i}
+                      variants={gridItemVariants}
+                      initial="hidden"
+                      animate="visible"
+                    >
+                      <ReserveCard
+                        player={player}
+                        isCaptain={player._id === captainId}
+                        onClick={() => setSelectedPlayer(player)}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Legend */}
             <div className="flex items-center justify-center gap-6 text-xs text-mist flex-wrap">
@@ -500,35 +729,6 @@ export default function SquadPage() {
               </div>
             </div>
 
-            {/* Reserves */}
-            {reserves.length > 0 && (
-              <div>
-                <div className="flex items-center gap-3 mb-6">
-                  <span className="text-sm font-mono font-bold text-text-secondary uppercase tracking-widest">
-                    Bench
-                  </span>
-                  <span className="h-px flex-1 bg-line" />
-                  <span className="text-xs text-mist font-mono">{reserves.length}</span>
-                </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                  {reserves.map((player, i) => (
-                    <motion.div
-                      key={player._id}
-                      custom={i}
-                      variants={gridItemVariants}
-                      initial="hidden"
-                      animate="visible"
-                    >
-                      <ReserveCard
-                        player={player}
-                        isCaptain={player._id === captainId}
-                        onClick={() => setSelectedPlayer(player)}
-                      />
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         ) : position === "FORMATION" ? (
           /* ═══════════ FORMATION VIEW ═══════════ */
@@ -539,7 +739,7 @@ export default function SquadPage() {
                 Starting XI
               </span>
               <h2 className="text-lg font-bold text-floodlight font-display">
-                {formationName} Formation
+                {teamFormationName} Formation
               </h2>
 
               {/* Formation switcher */}
@@ -547,10 +747,10 @@ export default function SquadPage() {
                 {FORMATION_OPTIONS.map((name) => (
                   <button
                     key={name}
-                    onClick={() => setFormationName(name)}
+                    onClick={() => setTeamFormationName(name)}
                     className={cn(
                       "px-3 py-1.5 text-xs font-mono font-bold rounded-lg transition-all duration-200",
-                      formationName === name
+                      teamFormationName === name
                         ? "bg-club-accent text-white shadow-lg shadow-club-accent/20"
                         : "bg-surface-raised text-mist hover:text-floodlight hover:bg-surface border border-line/40"
                     )}
@@ -570,6 +770,35 @@ export default function SquadPage() {
               viceCaptainId={viceCaptainId}
               onSelectPlayer={setSelectedPlayer}
             />
+
+            {/* Bench / Reserves */}
+            {benchPlayers.length > 0 && (
+              <div className="mt-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-xs font-mono text-card-gold uppercase tracking-widest">
+                    Bench / Reserves ({benchPlayers.length})
+                  </span>
+                  <span className="h-px flex-1 bg-line/40" />
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  {benchPlayers.map((player, i) => (
+                    <motion.div
+                      key={`bench-${player._id}`}
+                      custom={i}
+                      variants={gridItemVariants}
+                      initial="hidden"
+                      animate="visible"
+                    >
+                      <ReserveCard
+                        player={player}
+                        isCaptain={player._id === captainId}
+                        onClick={() => setSelectedPlayer(player)}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Legend */}
             <div className="flex items-center justify-center gap-6 text-xs text-mist">
@@ -591,35 +820,6 @@ export default function SquadPage() {
               </div>
             </div>
 
-            {/* Reserves */}
-            {reserves.length > 0 && (
-              <div>
-                <div className="flex items-center gap-3 mb-6">
-                  <span className="text-sm font-mono font-bold text-text-secondary uppercase tracking-widest">
-                    Reserves
-                  </span>
-                  <span className="h-px flex-1 bg-line" />
-                  <span className="text-xs text-mist font-mono">{reserves.length}</span>
-                </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                  {reserves.map((player, i) => (
-                    <motion.div
-                      key={player._id}
-                      custom={i}
-                      variants={gridItemVariants}
-                      initial="hidden"
-                      animate="visible"
-                    >
-                      <ReserveCard
-                        player={player}
-                        isCaptain={player._id === captainId}
-                        onClick={() => setSelectedPlayer(player)}
-                      />
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         ) : position === "EXTRA" ? (
           /* ═══════════ EXTENDED SQUAD VIEW ═══════════ */
@@ -631,7 +831,40 @@ export default function SquadPage() {
               <span className="h-px flex-1 bg-line" />
               <span className="text-xs text-mist font-mono">{players.length} players</span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+            {/* Mobile: horizontal scroll with swipe support */}
+            <div 
+              ref={scrollRef}
+              className="overflow-x-auto overscroll-contain"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              <div 
+                className="flex gap-3 md:hidden"
+                style={{ width: 'max-content', paddingBottom: '8px' }}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+              >
+                {players.map((player, i) => (
+                  <motion.div
+                    key={player._id}
+                    custom={i}
+                    variants={gridItemVariants}
+                    initial="hidden"
+                    animate="visible"
+                    className="shrink-0"
+                    style={{ width: 'calc((100vw - 64px) / 2.5)', maxWidth: '180px' }}
+                  >
+                    <PlayerGridCard
+                      player={player}
+                      isCaptain={player._id === captainId}
+                      onClick={() => handlePlayerClick(player)}
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+            {/* Desktop: grid */}
+            <div className="hidden md:block grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
               {players.map((player, i) => (
                 <motion.div
                   key={player._id}
@@ -665,7 +898,40 @@ export default function SquadPage() {
                     <span className="h-px flex-1 bg-line" />
                     <span className="text-xs text-mist font-mono">{group.length}</span>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+                  {/* Mobile: horizontal scroll with swipe support */}
+                  <div 
+                    ref={scrollRef}
+                    className="overflow-x-auto overscroll-contain"
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                  >
+                    <div 
+                      className="flex gap-3 md:grid md:grid-cols-5 md:gap-4"
+                      style={{ width: 'max-content', paddingBottom: '8px' }}
+                      onTouchStart={handleTouchStart}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
+                    >
+                      {group.map((player, i) => (
+                        <motion.div
+                          key={player._id}
+                          custom={i}
+                          variants={gridItemVariants}
+                          initial="hidden"
+                          animate="visible"
+                          className="shrink-0 md:shrink-auto"
+                          style={{ width: 'calc((100vw - 64px) / 2.5)', maxWidth: '180px' }}
+                        >
+                          <PlayerGridCard
+                            player={player}
+                            isCaptain={player._id === captainId}
+                            onClick={() => handlePlayerClick(player)}
+                          />
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Desktop: grid */}
+                  <div className="hidden md:block md:grid md:grid-cols-5 md:gap-4">
                     {group.map((player, i) => (
                       <motion.div
                         key={player._id}
