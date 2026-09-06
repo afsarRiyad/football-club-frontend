@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { GraduationCap, Star, Users, Trophy, Mail } from "lucide-react";
+import Image from "next/image";
 import api from "@/lib/api";
 import { Player, Academy } from "@/types";
 import { PageSpinner, Button } from "@/components/ui";
@@ -57,10 +58,11 @@ export default function AcademyPage() {
           {/* Academy Photo */}
           <div className="relative aspect-[4/3] bg-surface rounded-2xl border border-line/60 overflow-hidden animate-academy-photos">
             {academy?.photo ? (
-              <img
+              <Image
                 src={academy.photo}
                 alt="Academy"
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-surface-raised to-surface flex items-center justify-center">
@@ -125,10 +127,11 @@ export default function AcademyPage() {
                   )}
                 >
                   {player.photo ? (
-                    <img
+                    <Image
                       src={player.photo}
                       alt={`${player.firstName} ${player.lastName}`}
-                      className="w-full h-full object-cover animate-ken-burns"
+                      fill
+                      className="object-cover animate-ken-burns"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">

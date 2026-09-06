@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { Player, Formation, Statistic } from "@/types";
 import { cn } from "@/lib/utils";
 import CaptainArmband from "./CaptainArmband";
@@ -189,9 +190,11 @@ export default function PitchFormation({
                   )}
                 >
                   {player?.photo ? (
-                    <img
+                    <Image
                       src={player.photo}
                       alt={`${player.firstName} ${player.lastName}`}
+                      width={56}
+                      height={56}
                       className="w-full h-full object-cover"
                     />
                   ) : (

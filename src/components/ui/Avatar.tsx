@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,9 +26,11 @@ export default function Avatar({
 }: AvatarProps) {
   if (src) {
     return (
-      <img
+      <Image
         src={src}
         alt={alt || "Avatar"}
+        width={size === "lg" ? 64 : size === "md" ? 40 : 32}
+        height={size === "lg" ? 64 : size === "md" ? 40 : 32}
         className={cn(
           "rounded-full object-cover border-2 border-line",
           sizes[size],

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
 import { News } from "@/types";
+import Image from "next/image";
 import { PageSpinner, Pagination } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
@@ -94,10 +95,11 @@ export default function NewsPage() {
               <Link href={`/news/${articles[0].slug}`} className="group md:row-span-2">
                 <div className="relative aspect-[4/3] md:aspect-auto md:h-full bg-surface rounded-xl overflow-hidden">
                   {articles[0].cover ? (
-                    <img
+                    <Image
                       src={articles[0].cover}
                       alt={articles[0].title}
-                      className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                      fill
+                      className="object-cover group-hover:scale-[1.03] transition-transform duration-500"
                     />
                   ) : (
                     <div className="w-full h-full bg-surface-raised flex items-center justify-center">
@@ -132,9 +134,11 @@ export default function NewsPage() {
                 >
                   {article.cover && (
                     <div className="w-20 h-20 rounded-lg overflow-hidden shrink-0">
-                      <img
+                      <Image
                         src={article.cover}
                         alt={article.title}
+                        width={80}
+                        height={80}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     </div>
@@ -168,9 +172,11 @@ export default function NewsPage() {
                 >
                   {article.cover && (
                     <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0">
-                      <img
+                      <Image
                         src={article.cover}
                         alt={article.title}
+                        width={64}
+                        height={64}
                         className="w-full h-full object-cover"
                       />
                     </div>

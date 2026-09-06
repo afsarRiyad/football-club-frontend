@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import api from "@/lib/api";
 import { Gallery } from "@/types";
 
@@ -43,13 +44,13 @@ function MarqueeRow({
         {loopImages.map((src, i) => (
           <div
             key={i}
-            className="flex-none w-[280px] h-[180px] rounded-xl overflow-hidden border border-line/60"
+            className="relative flex-none w-[280px] h-[180px] rounded-xl overflow-hidden border border-line/60"
           >
-            <img
+            <Image
               src={src}
               alt={`Club photo ${(i % (loopImages.length / 2)) + 1}`}
-              className="w-full h-full object-cover transition-transform duration-400 hover:scale-110"
-              loading="lazy"
+              fill
+              className="object-cover transition-transform duration-400 hover:scale-110"
             />
           </div>
         ))}

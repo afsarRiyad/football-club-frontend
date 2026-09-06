@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { FiCalendar, FiEye } from "react-icons/fi";
 import { News } from "@/types";
 import { formatDate } from "@/lib/utils";
@@ -20,11 +21,12 @@ export default function NewsCard({ news, featured = false }: NewsCardProps) {
         }`}
       >
         {news.cover && (
-          <div className={`${featured ? "md:w-1/2" : "aspect-video"} overflow-hidden`}>
-            <img
+          <div className={`relative ${featured ? "md:w-1/2" : "aspect-video"} overflow-hidden`}>
+            <Image
               src={news.cover}
               alt={news.title}
-              className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
+              fill
+              className="object-cover group-hover:scale-[1.02] transition-transform duration-500"
             />
           </div>
         )}

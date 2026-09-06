@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, useInView, useScroll, useTransform } from "framer-motion";
 import {
   FiArrowRight,
@@ -104,9 +105,77 @@ const itemVariant = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } },
 };
 
+/* ─── Skeleton for the sections below the hero (shown while home data loads) ─── */
+function HomeSkeleton() {
+  return (
+    <div className="animate-pulse">
+      {/* Next match bar */}
+      <div className="bg-surface border-y border-line">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex items-center gap-6">
+          <div className="h-3 w-16 rounded bg-surface-raised border border-line/40" />
+          <div className="h-3 w-64 rounded bg-surface-raised border border-line/40" />
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="border-b border-line/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20 grid grid-cols-2 md:grid-cols-4 gap-8">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="space-y-2 text-center md:text-left">
+              <div className="h-5 w-5 mx-auto md:mx-0 rounded bg-surface-raised border border-line/40" />
+              <div className="h-9 w-24 mx-auto md:mx-0 rounded bg-surface-raised border border-line/40" />
+              <div className="h-3 w-32 mx-auto md:mx-0 rounded bg-surface-raised border border-line/40" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Photo marquee strip */}
+      <div className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto mb-4">
+        <div className="flex gap-4 overflow-hidden">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex-none w-[280px] h-[180px] rounded-xl bg-surface-raised border border-line/40" />
+          ))}
+        </div>
+      </div>
+
+      {/* News */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20">
+        <div className="flex items-baseline justify-between mb-8">
+          <div className="h-8 w-32 rounded bg-surface-raised border border-line/40" />
+          <div className="h-4 w-20 rounded bg-surface-raised border border-line/40" />
+        </div>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="md:row-span-2 h-72 rounded-2xl bg-surface-raised border border-line/40" />
+          <div className="space-y-4">
+            {[0, 1].map((i) => (
+              <div key={i} className="h-24 rounded-2xl bg-surface-raised border border-line/40" />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Squad */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-14">
+        <div className="flex items-baseline justify-between mb-8">
+          <div className="h-8 w-32 rounded bg-surface-raised border border-line/40" />
+          <div className="h-4 w-24 rounded bg-surface-raised border border-line/40" />
+        </div>
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="aspect-[3/4] rounded-2xl bg-surface-raised border border-line/40" />
+          ))}
+        </div>
+      </div>
+
+      <p className="sr-only">Loading home…</p>
+    </div>
+  );
+}
+
 
 /* ─── Request Match Form (matches homepage theme) ─── */
-function RequestMatchForm() {
+function RequestMatchForm({ club }: { club: Club | null }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -125,7 +194,21 @@ function RequestMatchForm() {
     }
     setSubmitting(true);
     try {
+      // The backend requires the club that the request belongs to, otherwise the
+      // request is rejected and never reaches the admin's Match Requests inbox.
+      let clubId = club?._id;
+      if (!clubId) {
+        try {
+          const { data } = await api.get("/clubs", { params: { limit: 1 } });
+          clubId = data.data?.[0]?._id;
+        } catch { /* fall through below */ }
+      }
+      if (!clubId) {
+        toast.error("No club configured yet. Please try again later.");
+        return;
+      }
       await api.post("/match-requests", {
+        club: clubId,
         requesterName: name,
         requesterEmail: email,
         requesterPhone: phone,
@@ -307,10 +390,23 @@ export default function HomePage() {
           <div className="absolute inset-0 bg-gradient-to-br from-pitch-night via-surface to-pitch-night" />
           <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.02]" />
 
-          <motion.div style={{ y: heroY, opacity: heroOpacity }} className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
+          {loading ? (
+            <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
+              <div className="max-w-2xl space-y-5 animate-pulse">
+                <div className="h-4 w-40 rounded-lg bg-surface-raised border border-line/40" />
+                <div className="h-14 md:h-20 w-4/5 rounded-xl bg-surface-raised border border-line/40" />
+                <div className="h-4 w-2/3 rounded-lg bg-surface-raised border border-line/40" />
+                <div className="flex gap-3 pt-3">
+                  <div className="h-11 w-36 rounded-lg bg-surface-raised border border-line/40" />
+                  <div className="h-11 w-28 rounded-lg bg-surface-raised border border-line/40" />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <motion.div style={{ y: heroY, opacity: heroOpacity }} className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
             <div className="max-w-2xl">
               <motion.p initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }} className="text-pitch-accent font-mono text-sm mb-5 tracking-wider uppercase">
-                {club?.name || "Football Club"}
+                {club?.name}
               </motion.p>
               <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }} className="text-5xl md:text-7xl lg:text-8xl font-bold text-floodlight font-display tracking-tight leading-[0.95]">
                 {club?.name ? (
@@ -318,7 +414,7 @@ export default function HomePage() {
                   Welcome to <span className="text-pitch-accent">{club.name.split(" ")[0]}</span>
                   </>
                 ) : (
-                  <>The Beautiful <span className="text-pitch-accent">Game</span></>
+                  <>Welcome to <span className="text-pitch-accent">Our Club</span></>
                 )}
               </motion.h1>
               <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="text-mist text-lg mt-6 max-w-lg leading-relaxed">
@@ -336,9 +432,15 @@ export default function HomePage() {
                 </Link>
               </motion.div>
             </div>
-          </motion.div>
+            </motion.div>
+          )}
+
         </section>
 
+        {loading ? (
+          <HomeSkeleton />
+        ) : (
+          <>
         {/* ═══════════ NEXT MATCH ═══════════ */}
         {upcoming.length > 0 && (
           <section className="bg-surface border-y border-line">
@@ -504,7 +606,7 @@ export default function HomePage() {
                     <Link href={`/squad/${p._id}`}>
                       <div className={cn("font-card group aspect-[3/4] bg-surface rounded-2xl border border-line/60 overflow-hidden relative transition-all duration-300 hover:shadow-[0_8px_30px_-8px_rgba(62,213,152,0.12)]", i === 0 && "md:col-span-2 md:row-span-2")}>
                         {p.photo ? (
-                          <img src={p.photo} alt={`${p.firstName} ${p.lastName}`} className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500" />
+                          <Image src={p.photo} alt={`${p.firstName} ${p.lastName}`} fill className="object-cover group-hover:scale-[1.03] transition-transform duration-500" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-surface-raised">
                             <span className="text-4xl font-bold text-line font-display">{p.firstName?.charAt(0)}</span>
@@ -574,10 +676,11 @@ export default function HomePage() {
                 <div className="font-card aspect-[4/3] bg-surface rounded-2xl border border-line/60 overflow-hidden animate-academy-photos">
                   {academies.length > 0 && academies[0].photo ? (
                     <div className="relative w-full h-full">
-                      <img
+                      <Image
                         src={academies[0].photo}
                         alt={academies[0].name}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-pitch-night/60 via-transparent to-transparent" />
                       <div className="absolute bottom-4 left-4 right-4">
@@ -636,7 +739,7 @@ export default function HomePage() {
               </Reveal>
 
               <Reveal direction="right">
-                <RequestMatchForm />
+                <RequestMatchForm club={club} />
               </Reveal>
             </div>
           </div>
@@ -663,6 +766,8 @@ export default function HomePage() {
             </Reveal>
           </div>
         </section>
+          </>
+        )}
       </main>
       <Footer />
     </>

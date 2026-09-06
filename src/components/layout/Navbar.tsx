@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X, User, LogOut } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Button, Avatar, ThemeToggle } from "@/components/ui";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
@@ -33,9 +34,11 @@ export default function Navbar() {
           <div className="flex items-center justify-between h-14">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 shrink-0">
-              <img
+              <Image
                 src="/logo.png"
                 alt="N.S Club Logo"
+                width={1305}
+                height={1206}
                 className="h-8 w-auto object-contain"
               />
               <span className="text-lg font-bold text-text-primary font-display tracking-tight hidden sm:block">

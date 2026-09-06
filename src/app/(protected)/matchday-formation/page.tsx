@@ -9,6 +9,7 @@ import { getSocket, connectSocket } from "@/lib/socket";
 import { getFormation, FIELD_SIZES, FieldSize } from "@/lib/formations";
 import type { Formation, FormationSlot, Player, Team, Match, MatchFormation } from "@/types";
 import { Calendar, MapPin, Clock, Shield, Users, Wifi, WifiOff } from "lucide-react";
+import Image from "next/image";
 
 /* ── Helper: format match date ── */
 function formatMatchDate(dateStr: string): string {
@@ -126,7 +127,7 @@ function PitchFormation({
                   }`}
                 >
                   {player?.photo ? (
-                    <img src={player.photo} alt="" className="w-full h-full rounded-full object-cover" />
+                    <Image src={player.photo} alt="" width={56} height={56} className="w-full h-full rounded-full object-cover" />
                   ) : player ? (
                     <span className="text-white font-bold text-sm">{player.firstName?.[0]}</span>
                   ) : (

@@ -531,7 +531,7 @@ export default function SquadPage() {
         {/* Header */}
         <div className="mb-10 md:mb-14">
           <h1 className="text-4xl md:text-5xl font-bold font-display tracking-tight" style={{ color: '#FF6B4A' }}>
-            <span className="text-black">The</span> Squad
+            <span className="text-floodlight">The</span> Squad
           </h1>
           <p className="text-text-secondary mt-3 text-lg max-w-xl">
             Meet the players who wear the shirt with pride.

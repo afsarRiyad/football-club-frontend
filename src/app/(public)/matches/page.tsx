@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
 import { Match } from "@/types";
+import Image from "next/image";
 import { PageSpinner, Pagination } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
@@ -229,7 +230,7 @@ export default function MatchesPage() {
                           {getTeamName(match.homeTeam)}
                         </span>
                         {homeLogo && (
-                          <img src={homeLogo} alt="" className="w-6 h-6 rounded-full object-contain border border-line/30 shrink-0" />
+                          <Image src={homeLogo} alt="" width={24} height={24} className="w-6 h-6 rounded-full object-contain border border-line/30 shrink-0" />
                         )}
                       </div>
                     </div>
@@ -278,7 +279,7 @@ export default function MatchesPage() {
                     <div className="flex-1 text-left">
                       <div className="flex items-center gap-2">
                         {awayLogo && (
-                          <img src={awayLogo} alt="" className="w-6 h-6 rounded-full object-contain border border-line/30 shrink-0" />
+                          <Image src={awayLogo} alt="" width={24} height={24} className="w-6 h-6 rounded-full object-contain border border-line/30 shrink-0" />
                         )}
                         <span className="text-sm md:text-base font-semibold text-floodlight group-hover:text-pitch-accent transition-colors truncate">
                           {getTeamName(match.awayTeam)}

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Camera, Play, X, ChevronLeft, ChevronRight } from "lucide-react";
+import Image from "next/image";
 import api from "@/lib/api";
 import { Gallery } from "@/types";
 import { PageSpinner, Pagination } from "@/components/ui";
@@ -122,16 +123,18 @@ export default function GalleryPage() {
                   onClick={() => openLightbox(gallery, 0)}
                 >
                   {gallery.coverImage ? (
-                    <img
+                    <Image
                       src={gallery.coverImage}
                       alt={gallery.title}
-                      className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                      fill
+                      className="object-cover group-hover:scale-[1.03] transition-transform duration-500"
                     />
                   ) : gallery.media.length > 0 ? (
-                    <img
+                    <Image
                       src={gallery.media[0].url}
                       alt={gallery.title}
-                      className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                      fill
+                      className="object-cover group-hover:scale-[1.03] transition-transform duration-500"
                     />
                   ) : (
                     <div className="w-full h-full bg-surface-raised flex items-center justify-center">
@@ -230,10 +233,12 @@ export default function GalleryPage() {
                 className="max-w-full max-h-[80vh] mx-auto rounded-lg"
               />
             ) : (
-              <img
+              <Image
                 src={lightboxGallery.media[lightboxIndex]?.url}
                 alt={lightboxGallery.title}
-                className="max-w-full max-h-[80vh] mx-auto rounded-lg object-contain"
+                width={1600}
+                height={1000}
+                className="max-w-full max-h-[80vh] mx-auto rounded-lg object-contain w-auto h-auto"
               />
             )}
           </div>

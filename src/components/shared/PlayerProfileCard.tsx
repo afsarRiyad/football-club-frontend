@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Player } from "@/types";
 import { Badge, Avatar } from "@/components/ui";
 
@@ -80,10 +81,11 @@ export default function PlayerProfileCard({
       <div className="font-card bg-surface rounded-2xl border border-line/60 overflow-hidden transition-all duration-300 hover:shadow-[0_8px_30px_-8px_rgba(62,213,152,0.12)] hover:border-line group">
         <div className="aspect-[3/4] bg-surface-raised relative overflow-hidden">
           {player.photo ? (
-            <img
+            <Image
               src={player.photo}
               alt={name}
-              className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+              fill
+              className="object-cover group-hover:scale-[1.03] transition-transform duration-500"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">

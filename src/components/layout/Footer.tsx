@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ExternalLink } from "lucide-react";
 
 export default function Footer() {
@@ -12,9 +13,11 @@ export default function Footer() {
           {/* Brand */}
           <div className="space-y-4">
             <Link href="/" className="flex items-center gap-2.5">
-              <img
+              <Image
                 src="/logo.png"
                 alt="N.S Club Logo"
+                width={1305}
+                height={1206}
                 className="h-10 w-auto object-contain"
               />
               <span className="text-xl font-bold text-floodlight font-display tracking-tight">

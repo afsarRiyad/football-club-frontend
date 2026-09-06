@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Calendar, Ruler, Weight, Shirt, MapPin, Footprints, Trophy, TrendingUp, BarChart3 } from "lucide-react";
+import Image from "next/image";
 import api from "@/lib/api";
 import { Player, Statistic, StatisticType } from "@/types";
 import { PageSpinner } from "@/components/ui";
@@ -46,16 +47,16 @@ function getStatColor(val: number): string {
   if (val >= 85) return "text-amber-400";
   if (val >= 75) return "text-emerald-400";
   if (val >= 65) return "text-blue-400";
-  if (val >= 50) return "text-white/80";
-  return "text-white/50";
+  if (val >= 50) return "text-mist";
+  return "text-mist/70";
 }
 
 function getBarColor(val: number): string {
   if (val >= 85) return "bg-amber-400";
   if (val >= 75) return "bg-emerald-400";
   if (val >= 65) return "bg-blue-400";
-  if (val >= 50) return "bg-white/60";
-  return "bg-white/30";
+  if (val >= 50) return "bg-mist/60";
+  return "bg-mist/40";
 }
 
 function aggregateStats(stats: Statistic[], playerId: string) {
@@ -202,10 +203,11 @@ export default function PlayerProfilePage() {
         <div className="md:col-span-3">
           <div className={cn("relative aspect-[4/5] rounded-2xl overflow-hidden bg-gradient-to-b", positionBg[pos])}>
             {player.photo ? (
-              <img
+              <Image
                 src={player.photo}
                 alt={name}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -229,7 +231,7 @@ export default function PlayerProfilePage() {
 
             {/* Jersey number */}
             {player.number && (
-              <span className="absolute bottom-4 right-4 text-6xl font-mono font-bold text-white/10 tabular-nums">
+              <span className="absolute bottom-4 right-4 text-6xl font-mono font-bold text-white/30 tabular-nums drop-shadow-[0_2px_6px_rgba(0,0,0,0.45)]">
                 {String(player.number).padStart(2, "0")}
               </span>
             )}
@@ -249,7 +251,7 @@ export default function PlayerProfilePage() {
             {/* Name + Position */}
             <div>
               {player.number && (
-                <span className="text-5xl font-mono font-bold text-line/20 tabular-nums block mb-1">
+                <span className="text-5xl font-mono font-bold text-mist/60 tabular-nums block mb-1">
                   #{player.number}
                 </span>
               )}
@@ -537,13 +539,13 @@ export default function PlayerProfilePage() {
                             </span>
                           </div>
                           <div className="flex items-end gap-1 w-full" style={{ height: 160 }}>
-                            <div className="flex-1 flex justify-center">
+                            <div className="flex-1 h-full flex items-end justify-center">
                               <div
                                 className="w-full max-w-[28px] rounded-t-md bg-club-accent transition-all duration-500"
                                 style={{ height: `${Math.max(goalH, 2)}%` }}
                               />
                             </div>
-                            <div className="flex-1 flex justify-center">
+                            <div className="flex-1 h-full flex items-end justify-center">
                               <div
                                 className="w-full max-w-[28px] rounded-t-md bg-pitch-green transition-all duration-500"
                                 style={{ height: `${Math.max(assistH, 2)}%` }}
@@ -553,6 +555,15 @@ export default function PlayerProfilePage() {
                         </div>
                       );
                     })}
+                  </div>
+                  {/* Per-bar stat labels */}
+                  <div className="flex gap-3 sm:gap-5 mt-1.5">
+                    {namedSeasons.map((row) => (
+                      <div key={`${row.seasonId}-bar-labels`} className="flex-1 flex gap-1">
+                        <span className="flex-1 text-center text-[9px] font-mono font-bold text-club-accent">G</span>
+                        <span className="flex-1 text-center text-[9px] font-mono font-bold text-pitch-green">A</span>
+                      </div>
+                    ))}
                   </div>
                   <div className="flex gap-3 sm:gap-5 mt-3">
                     {namedSeasons.map((row) => (
@@ -611,13 +622,13 @@ export default function PlayerProfilePage() {
                             </span>
                           </div>
                           <div className="flex items-end gap-1 w-full" style={{ height: 160 }}>
-                            <div className="flex-1 flex justify-center">
+                            <div className="flex-1 h-full flex items-end justify-center">
                               <div
                                 className="w-full max-w-[28px] rounded-t-md bg-blue-500 transition-all duration-500"
                                 style={{ height: `${Math.max(appsH, 2)}%` }}
                               />
                             </div>
-                            <div className="flex-1 flex justify-center">
+                            <div className="flex-1 h-full flex items-end justify-center">
                               <div
                                 className="w-full max-w-[28px] rounded-t-md bg-amber-400 transition-all duration-500"
                                 style={{ height: `${Math.max(minsH, 2)}%` }}
@@ -627,6 +638,15 @@ export default function PlayerProfilePage() {
                         </div>
                       );
                     })}
+                  </div>
+                  {/* Per-bar stat labels */}
+                  <div className="flex gap-3 sm:gap-5 mt-1.5">
+                    {namedSeasons.map((row) => (
+                      <div key={`${row.seasonId}-bar-labels`} className="flex-1 flex gap-1">
+                        <span className="flex-1 text-center text-[9px] font-mono font-bold text-blue-500 truncate">Apps</span>
+                        <span className="flex-1 text-center text-[9px] font-mono font-bold text-amber-500 truncate">Min</span>
+                      </div>
+                    ))}
                   </div>
                   <div className="flex gap-3 sm:gap-5 mt-3">
                     {namedSeasons.map((row) => (

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { MapPin, Calendar, Mail, Phone, Globe, Building2, ExternalLink } from "lucide-react";
+import { MapPin, Calendar, Globe, Building2, ExternalLink, Trophy } from "lucide-react";
 import api from "@/lib/api";
 import { Club } from "@/types";
 import { PageSpinner } from "@/components/ui";
@@ -48,7 +48,7 @@ export default function AboutPage() {
   if (!club) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-16 text-center">
-        <p className="text-gray-500 dark:text-gray-400">Club information not available.</p>
+        <p className="text-mist">Club information not available.</p>
       </div>
     );
   }
@@ -67,14 +67,14 @@ export default function AboutPage() {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
       {/* Hero */}
       <div className="mb-14 md:mb-20">
-        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white tracking-tight leading-[1.1]">
-          About{" "}
-          <span className="text-primary">{club.name}</span>
+        <span className="text-xs font-mono text-club-accent uppercase tracking-widest mb-3 block">
+          Our Story
+        </span>
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-floodlight font-display tracking-tight leading-[1.1]">
+          About <span className="text-club-accent">{club.name}</span>
         </h1>
         {club.founded && (
-          <p className="text-gray-500 dark:text-gray-400 mt-4 text-lg font-mono">
-            Est. {club.founded}
-          </p>
+          <p className="text-mist mt-4 text-lg font-mono">Est. {club.founded}</p>
         )}
       </div>
 
@@ -82,7 +82,7 @@ export default function AboutPage() {
       {club.description && (
         <div className="mb-16 md:mb-24">
           <div className="max-w-3xl">
-            <p className="text-xl md:text-2xl text-gray-700 dark:text-gray-300 leading-relaxed font-light">
+            <p className="text-xl md:text-2xl text-floodlight/80 leading-relaxed font-light">
               {club.description}
             </p>
           </div>
@@ -91,36 +91,51 @@ export default function AboutPage() {
 
       {/* Key facts */}
       <div className="mb-16 md:mb-24">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-gray-200 dark:bg-gray-800">
+        <div className="flex items-center gap-3 mb-6">
+          <Trophy className="h-5 w-5 text-club-gold shrink-0" />
+          <span className="text-lg font-mono font-bold text-club-accent uppercase tracking-widest">
+            Club Facts
+          </span>
+          <span className="h-px flex-1 bg-line" />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {club.founded && (
-            <div className="bg-white dark:bg-gray-900 p-6 md:p-8">
-              <p className="text-3xl md:text-4xl font-mono font-bold text-primary tabular-nums">
+            <div className="bg-surface rounded-xl border border-line/30 p-6">
+              <Trophy className="h-5 w-5 text-club-gold mb-3" />
+              <p className="text-3xl font-mono font-black text-floodlight tabular-nums">
                 {new Date().getFullYear() - club.founded}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 uppercase tracking-wider">Years Active</p>
+              <p className="text-[10px] text-mist font-mono uppercase tracking-widest mt-2">
+                Years Active
+              </p>
             </div>
           )}
           {stadiumName && (
-            <div className="bg-white dark:bg-gray-900 p-6 md:p-8">
-              <p className="text-lg font-bold text-gray-900 dark:text-white line-clamp-2">
-                {stadiumName}
+            <div className="bg-surface rounded-xl border border-line/30 p-6">
+              <Building2 className="h-5 w-5 text-club-accent mb-3" />
+              <p className="text-lg font-bold text-floodlight line-clamp-2">{stadiumName}</p>
+              <p className="text-[10px] text-mist font-mono uppercase tracking-widest mt-2">
+                Home Ground
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 uppercase tracking-wider">Home Ground</p>
             </div>
           )}
           {club.location?.country && (
-            <div className="bg-white dark:bg-gray-900 p-6 md:p-8">
-              <p className="text-lg font-bold text-gray-900 dark:text-white">
-                {club.location.country}
+            <div className="bg-surface rounded-xl border border-line/30 p-6">
+              <Globe className="h-5 w-5 text-pitch-green mb-3" />
+              <p className="text-lg font-bold text-floodlight">{club.location.country}</p>
+              <p className="text-[10px] text-mist font-mono uppercase tracking-widest mt-2">
+                Country
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 uppercase tracking-wider">Country</p>
             </div>
           )}
-          <div className="bg-white dark:bg-gray-900 p-6 md:p-8">
-            <p className="text-3xl md:text-4xl font-mono font-bold text-primary tabular-nums">
+          <div className="bg-surface rounded-xl border border-line/30 p-6">
+            <Calendar className="h-5 w-5 text-club-gold mb-3" />
+            <p className="text-3xl font-mono font-black text-floodlight tabular-nums">
               {club.founded || "—"}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 uppercase tracking-wider">Founded</p>
+            <p className="text-[10px] text-mist font-mono uppercase tracking-widest mt-2">
+              Founded
+            </p>
           </div>
         </div>
       </div>
@@ -128,68 +143,94 @@ export default function AboutPage() {
       {/* Contact + Mission */}
       <div className="grid md:grid-cols-2 gap-12 md:gap-16">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-            Get in Touch
-          </h2>
+          <div className="flex items-center gap-3 mb-6">
+            <span className="text-lg font-mono font-bold text-club-accent uppercase tracking-widest">
+              Get in Touch
+            </span>
+            <span className="h-px flex-1 bg-line" />
+          </div>
           <div className="space-y-4">
             {location && (
               <div className="flex items-start gap-3">
-                <MapPin className="h-4 w-4 text-gray-400 mt-1 shrink-0" />
-                <span className="text-gray-600 dark:text-gray-300">{location}</span>
+                <MapPin className="h-4 w-4 text-club-accent mt-1 shrink-0" />
+                <span className="text-sm text-mist">{location}</span>
               </div>
             )}
             {stadiumAddr && (
               <div className="flex items-start gap-3">
-                <Building2 className="h-4 w-4 text-gray-400 mt-1 shrink-0" />
-                <span className="text-gray-600 dark:text-gray-300">{stadiumAddr}</span>
+                <Building2 className="h-4 w-4 text-club-accent mt-1 shrink-0" />
+                <span className="text-sm text-mist">{stadiumAddr}</span>
               </div>
             )}
 
             {/* Social links */}
             {social.facebook && (
               <div className="flex items-start gap-3">
-                <ExternalLink className="h-4 w-4 text-gray-400 mt-1 shrink-0" />
-                <a href={social.facebook} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                <ExternalLink className="h-4 w-4 text-club-accent mt-1 shrink-0" />
+                <a
+                  href={social.facebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-pitch-accent hover:underline"
+                >
                   Facebook
                 </a>
               </div>
             )}
             {social.twitter && (
               <div className="flex items-start gap-3">
-                <ExternalLink className="h-4 w-4 text-gray-400 mt-1 shrink-0" />
-                <a href={social.twitter} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                <ExternalLink className="h-4 w-4 text-club-accent mt-1 shrink-0" />
+                <a
+                  href={social.twitter}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-pitch-accent hover:underline"
+                >
                   Twitter / X
                 </a>
               </div>
             )}
             {social.instagram && (
               <div className="flex items-start gap-3">
-                <ExternalLink className="h-4 w-4 text-gray-400 mt-1 shrink-0" />
-                <a href={social.instagram} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                <ExternalLink className="h-4 w-4 text-club-accent mt-1 shrink-0" />
+                <a
+                  href={social.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-pitch-accent hover:underline"
+                >
                   Instagram
                 </a>
               </div>
             )}
             {social.youtube && (
               <div className="flex items-start gap-3">
-                <ExternalLink className="h-4 w-4 text-gray-400 mt-1 shrink-0" />
-                <a href={social.youtube} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                <ExternalLink className="h-4 w-4 text-club-accent mt-1 shrink-0" />
+                <a
+                  href={social.youtube}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-pitch-accent hover:underline"
+                >
                   YouTube
                 </a>
               </div>
             )}
 
             {!location && !stadiumAddr && !social.facebook && !social.twitter && !social.instagram && !social.youtube && (
-              <p className="text-gray-400 text-sm">No contact information available yet.</p>
+              <p className="text-mist text-sm">No contact information available yet.</p>
             )}
           </div>
         </div>
 
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-            Our Mission
-          </h2>
-          <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+          <div className="flex items-center gap-3 mb-6">
+            <span className="text-lg font-mono font-bold text-club-accent uppercase tracking-widest">
+              Our Mission
+            </span>
+            <span className="h-px flex-1 bg-line" />
+          </div>
+          <p className="text-mist leading-relaxed">
             To develop world-class football talent while fostering community spirit,
             sportsmanship, and a passion for the beautiful game. We believe in the
             power of sport to bring people together and create lasting memories.

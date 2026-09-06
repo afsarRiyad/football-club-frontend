@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Trophy, ArrowLeft, Target } from "lucide-react";
+import Image from "next/image";
 import api from "@/lib/api";
 import { Standing, TopScorer } from "@/types";
 import { PageSpinner } from "@/components/ui";
@@ -141,9 +142,11 @@ export default function StandingsPage() {
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
                           {typeof s.team !== "string" && s.team.logo ? (
-                            <img
+                            <Image
                               src={s.team.logo}
                               alt={s.team.name}
+                              width={24}
+                              height={24}
                               className="h-6 w-6 rounded-full object-cover border border-line"
                             />
                           ) : (
@@ -214,9 +217,11 @@ export default function StandingsPage() {
                   </span>
 
                   {photo ? (
-                    <img
+                    <Image
                       src={photo}
                       alt={name}
+                      width={40}
+                      height={40}
                       className="h-10 w-10 rounded-full object-cover border border-line"
                     />
                   ) : (

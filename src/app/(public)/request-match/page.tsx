@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Calendar, MapPin, Send, Loader2, Check, Mail, Phone, Shield } from "lucide-react";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
@@ -13,8 +13,21 @@ export default function RequestMatchPage() {
   const [preferredDate, setPreferredDate] = useState("");
   const [preferredVenue, setPreferredVenue] = useState("");
   const [message, setMessage] = useState("");
+  const [clubId, setClubId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  // The backend requires the club that the request belongs to, otherwise the
+  // request is rejected and never reaches the admin's Match Requests inbox.
+  useEffect(() => {
+    let active = true;
+    api.get("/clubs", { params: { limit: 1 } })
+      .then(({ data }) => {
+        if (active) setClubId(data.data?.[0]?._id || null);
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +37,12 @@ export default function RequestMatchPage() {
     }
     setSubmitting(true);
     try {
+      if (!clubId) {
+        toast.error("No club configured yet. Please try again later.");
+        return;
+      }
       await api.post("/match-requests", {
+        club: clubId,
         requesterName: name,
         requesterEmail: email,
         requesterPhone: phone,

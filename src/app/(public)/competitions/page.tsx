@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Trophy, Swords, ArrowLeft, Calendar, MapPin, Users, ChevronRight, Loader2 } from "lucide-react";
+import Image from "next/image";
 import api from "@/lib/api";
 import { Competition, Match } from "@/types";
 import { PageSpinner } from "@/components/ui";
@@ -71,7 +72,7 @@ function MiniBracket({ matches }: { matches: any[] }) {
                   >
                     <div className={cn("flex items-center gap-1.5 px-2.5 py-1.5 border-b border-line/30", isHomeWin && "bg-green-500/5")}>
                       {getTeamLogo(match.homeTeam) && (
-                        <img src={getTeamLogo(match.homeTeam)} alt="" className="w-4 h-4 rounded object-contain" />
+                        <Image src={getTeamLogo(match.homeTeam)} alt="" width={16} height={16} className="w-4 h-4 rounded object-contain" />
                       )}
                       <span className={cn("flex-1 truncate text-xs", isHomeWin && "font-bold text-pitch-accent")}>
                         {getTeamName(match.homeTeam)}
@@ -84,7 +85,7 @@ function MiniBracket({ matches }: { matches: any[] }) {
                     </div>
                     <div className={cn("flex items-center gap-1.5 px-2.5 py-1.5", isAwayWin && "bg-green-500/5")}>
                       {getTeamLogo(match.awayTeam) && (
-                        <img src={getTeamLogo(match.awayTeam)} alt="" className="w-4 h-4 rounded object-contain" />
+                        <Image src={getTeamLogo(match.awayTeam)} alt="" width={16} height={16} className="w-4 h-4 rounded object-contain" />
                       )}
                       <span className={cn("flex-1 truncate text-xs", isAwayWin && "font-bold text-pitch-accent")}>
                         {getTeamName(match.awayTeam)}
@@ -126,7 +127,7 @@ function CompetitionCard({
       {/* Header with logo */}
       <div className="relative h-32 bg-gradient-to-br from-surface-raised to-surface overflow-hidden">
         {competition.logo ? (
-          <img src={competition.logo} alt={competition.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <Image src={competition.logo} alt={competition.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <Trophy className="h-12 w-12 text-line/30" />
@@ -280,7 +281,7 @@ export default function CompetitionsPage() {
         {/* Hero */}
         <div className="relative h-48 md:h-64 rounded-2xl overflow-hidden mb-8">
           {selected.logo ? (
-            <img src={selected.logo} alt={selected.name} className="w-full h-full object-cover" />
+            <Image src={selected.logo} alt={selected.name} fill className="object-cover" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-surface-raised to-surface flex items-center justify-center">
               <Trophy className="h-20 w-20 text-line/20" />
@@ -397,7 +398,7 @@ export default function CompetitionsPage() {
                                 <td className="py-2 px-3 font-mono text-mist text-[10px]">{i + 1}</td>
                                 <td className="py-2 px-3">
                                   <div className="flex items-center gap-2">
-                                    {tl ? <img src={tl} alt="" className="w-5 h-5 rounded-full object-contain" /> : <div className="w-5 h-5 rounded-full bg-surface-raised flex items-center justify-center text-[7px] font-bold text-line">{tn?.charAt(0)}</div>}
+                                    {tl ? <Image src={tl} alt="" width={20} height={20} className="w-5 h-5 rounded-full object-contain" /> : <div className="w-5 h-5 rounded-full bg-surface-raised flex items-center justify-center text-[7px] font-bold text-line">{tn?.charAt(0)}</div>}
                                     <span className="font-medium text-floodlight truncate">{tn}</span>
                                   </div>
                                 </td>
@@ -476,7 +477,7 @@ export default function CompetitionsPage() {
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-3">
                               {teamLogo ? (
-                                <img src={teamLogo} alt="" className="w-7 h-7 rounded-full object-contain border border-line/30" />
+                                <Image src={teamLogo} alt="" width={28} height={28} className="w-7 h-7 rounded-full object-contain border border-line/30" />
                               ) : (
                                 <div className="w-7 h-7 rounded-full bg-surface-raised border border-line/30 flex items-center justify-center">
                                   <span className="text-[9px] font-bold text-line">{teamName?.charAt(0)}</span>
@@ -597,7 +598,7 @@ export default function CompetitionsPage() {
                                       isHomeWin ? "text-floodlight" : "text-mist"
                                     )}>{homeName}</span>
                                     {homeLogo ? (
-                                      <img src={homeLogo} alt="" className="w-10 h-10 rounded-full object-contain border border-line/30" />
+                                      <Image src={homeLogo} alt="" width={40} height={40} className="w-10 h-10 rounded-full object-contain border border-line/30" />
                                     ) : (
                                       <div className="w-10 h-10 rounded-full bg-surface-raised border border-line/30 flex items-center justify-center">
                                         <span className="text-xs font-bold text-line">{homeName?.charAt(0)}</span>
@@ -623,7 +624,7 @@ export default function CompetitionsPage() {
                                 <div className="flex-1 text-left">
                                   <div className="flex items-center gap-3">
                                     {awayLogo ? (
-                                      <img src={awayLogo} alt="" className="w-10 h-10 rounded-full object-contain border border-line/30" />
+                                      <Image src={awayLogo} alt="" width={40} height={40} className="w-10 h-10 rounded-full object-contain border border-line/30" />
                                     ) : (
                                       <div className="w-10 h-10 rounded-full bg-surface-raised border border-line/30 flex items-center justify-center">
                                         <span className="text-xs font-bold text-line">{awayName?.charAt(0)}</span>
@@ -656,7 +657,7 @@ export default function CompetitionsPage() {
               {(selected as any).teams.filter((t: any) => t && typeof t === "object").map((team: any, i: number) => (
                 <div key={i} className="flex items-center gap-3 bg-surface rounded-xl border border-line/40 px-4 py-3">
                   {team.logo ? (
-                    <img src={team.logo} alt="" className="w-8 h-8 rounded-full object-cover border border-line" />
+                    <Image src={team.logo} alt="" width={32} height={32} className="w-8 h-8 rounded-full object-cover border border-line" />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-surface-raised border border-line flex items-center justify-center">
                       <span className="text-xs font-bold text-line">{team.name?.charAt(0)}</span>
@@ -693,7 +694,7 @@ export default function CompetitionsPage() {
       {/* Header */}
       <div className="mb-10">
         <h1 className="text-4xl md:text-5xl font-bold font-display tracking-tight" style={{ color: "#FF6B4A" }}>
-          <span className="text-black">Competitions</span>
+          <span className="text-floodlight">Competitions</span>
         </h1>
         <p className="text-text-secondary mt-3 text-lg max-w-xl">
           Tournaments, leagues, and cups our club competes in.

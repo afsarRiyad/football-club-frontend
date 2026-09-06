@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Calendar, MapPin, Users, MessageCircle, ArrowLeft, Clock, Trophy, CircleDot, BarChart3 } from "lucide-react";
+import Image from "next/image";
 import api from "@/lib/api";
 import { Match, Team, MatchEvent, Player } from "@/types";
 import { Badge, PageSpinner, Input, Button } from "@/components/ui";
@@ -185,7 +186,7 @@ export default function MatchDetailPage() {
             {/* Home */}
             <div className="flex-1 flex flex-col items-center md:flex-row md:justify-end gap-3 md:gap-4">
               {homeLogo ? (
-                <img src={homeLogo} alt={homeName} className="w-16 h-16 md:w-20 md:h-20 rounded-full object-contain border border-line/30" />
+                <Image src={homeLogo} alt={homeName} width={80} height={80} className="w-16 h-16 md:w-20 md:h-20 rounded-full object-contain border border-line/30" />
               ) : (
                 <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-surface-raised border border-line/30 flex items-center justify-center">
                   <span className="text-2xl font-bold text-line/30">{homeName.charAt(0)}</span>
@@ -259,7 +260,7 @@ export default function MatchDetailPage() {
                 )}
               </div>
               {awayLogo ? (
-                <img src={awayLogo} alt={awayName} className="w-16 h-16 md:w-20 md:h-20 rounded-full object-contain border border-line/30" />
+                <Image src={awayLogo} alt={awayName} width={80} height={80} className="w-16 h-16 md:w-20 md:h-20 rounded-full object-contain border border-line/30" />
               ) : (
                 <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-surface-raised border border-line/30 flex items-center justify-center">
                   <span className="text-2xl font-bold text-line/30">{awayName.charAt(0)}</span>

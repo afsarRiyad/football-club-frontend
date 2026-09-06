@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 import { Player, Statistic, StatisticType } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -97,9 +98,11 @@ export default function PlayerTooltip({ player, statistics, visible }: PlayerToo
             {/* Name + Number */}
             <div className="flex items-center gap-2 mb-2">
               {player.photo ? (
-                <img
+                <Image
                   src={player.photo}
                   alt={`${player.firstName} ${player.lastName}`}
+                  width={32}
+                  height={32}
                   className="w-8 h-8 rounded-full object-cover border border-white/20"
                 />
               ) : (

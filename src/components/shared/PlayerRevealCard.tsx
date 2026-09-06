@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, Calendar, Ruler, Weight, Share2, Check } from "lucide-react";
+import Image from "next/image";
 import { Player, Statistic, StatisticType } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -270,8 +271,9 @@ export default function PlayerRevealCard({ player, statistics, onClose }: Player
                       {/* Player photo */}
                       <div className="relative my-1 h-[250px] shrink-0">
                         {player.photo ? (
-                          <img src={player.photo} alt={`${player.firstName} ${player.lastName}`}
-                            className="w-full h-full object-cover object-top rounded-xl"
+                          <Image src={player.photo} alt={`${player.firstName} ${player.lastName}`}
+                            fill
+                            className="object-cover object-top rounded-xl"
                             style={{ maskImage: "linear-gradient(to bottom, black 60%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, black 60%, transparent 100%)" }}
                           />
                         ) : (

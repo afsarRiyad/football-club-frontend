@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Calendar, Eye, ArrowLeft, Tag } from "lucide-react";
 import api from "@/lib/api";
 import { News } from "@/types";
+import Image from "next/image";
 import { Badge, PageSpinner } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
 
@@ -60,9 +61,11 @@ export default function NewsDetailPage() {
 
       <article>
         {article.cover && (
-          <img
+          <Image
             src={article.cover}
             alt={article.title}
+            width={1600}
+            height={900}
             className="w-full h-64 md:h-96 object-cover rounded-xl mb-6 border border-line"
           />
         )}
