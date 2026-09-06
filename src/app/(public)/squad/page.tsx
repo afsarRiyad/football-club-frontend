@@ -457,17 +457,20 @@ export default function SquadPage() {
 
   // Build starters (slot-aligned — index i matches pitch slot i). Entries that
   // reference a player who no longer exists are skipped instead of crashing.
+  // Matchday tab uses matchFormation; Formation tab uses teamStartingXI only.
   const starters = useMemo<(Player | undefined)[]>(() => {
     const slotCount = formation.slots.length;
     const bySlot: (Player | undefined)[] = new Array(slotCount).fill(undefined);
 
-    // 1. Match formation (admin-set per match), 2. Team startingXI (admin-set default)
-    const source =
-      matchFormation && matchFormation.startingXI && matchFormation.startingXI.length > 0
-        ? matchFormation.startingXI
-        : teamStartingXI.length > 0
-          ? teamStartingXI
-          : null;
+    // Pick data source based on active tab
+    const isMatchday = position === "MATCHDAY";
+    const source = isMatchday
+      ? (matchFormation && matchFormation.startingXI && matchFormation.startingXI.length > 0
+          ? matchFormation.startingXI
+          : teamStartingXI.length > 0
+            ? teamStartingXI
+            : null)
+      : (teamStartingXI.length > 0 ? teamStartingXI : null);
 
     if (source) {
       const ordered = [...source].sort((a, b) => a.slotIndex - b.slotIndex);
@@ -484,33 +487,36 @@ export default function SquadPage() {
       return bySlot;
     }
 
-    // 3. Auto-pick by position priority
+    // Auto-pick by position priority
     const picks = getStarters(players, formation);
     picks.forEach((p, i) => {
       if (i < slotCount) bySlot[i] = p;
     });
     return bySlot;
-  }, [matchFormation, teamStartingXI, players, formation]);
+  }, [matchFormation, teamStartingXI, players, formation, position]);
 
-  // Build bench: prefer match formation, then team bench (null-safe)
+  // Build bench: Matchday tab uses matchFormation bench; Formation tab uses team bench.
   const benchPlayers = useMemo(() => {
-    // 1. Match formation bench (admin-set per match)
-    if (matchFormation && matchFormation.bench && matchFormation.bench.length > 0) {
-      return matchFormation.bench
-        .map((p) => {
-          const pid = typeof p === "string" ? p : p && p._id;
-          return pid ? players.find((pl) => pl._id === pid) : undefined;
-        })
-        .filter((p): p is Player => !!p) as Player[];
+    const isMatchday = position === "MATCHDAY";
+    if (isMatchday) {
+      // 1. Match formation bench (admin-set per match)
+      if (matchFormation && matchFormation.bench && matchFormation.bench.length > 0) {
+        return matchFormation.bench
+          .map((p) => {
+            const pid = typeof p === "string" ? p : p && p._id;
+            return pid ? players.find((pl) => pl._id === pid) : undefined;
+          })
+          .filter((p): p is Player => !!p) as Player[];
+      }
     }
-    // 2. Team bench (admin-set default)
+    // 2. Team bench (admin-set default) — used in Formation tab, or as fallback in Matchday
     if (teamBench.length > 0) {
       return teamBench
         .map((p) => players.find((pl) => pl._id === p._id))
         .filter((p): p is Player => !!p) as Player[];
     }
     return [];
-  }, [matchFormation, teamBench, players]);
+  }, [matchFormation, teamBench, players, position]);
 
   const starterIds = new Set(starters.map((p) => p?._id).filter((id): id is string => !!id));
   // Only show team members as reserves (not all club players)
