@@ -17,6 +17,8 @@ const typeColors: Record<string, string> = {
 
 const statusColors: Record<string, string> = {
   UPCOMING: "bg-blue-500/10 text-blue-400",
+  DRAFT: "bg-gray-500/10 text-gray-400",
+  REGISTRATION: "bg-blue-500/10 text-blue-400",
   IN_PROGRESS: "bg-green-500/10 text-green-400",
   COMPLETED: "bg-gray-500/10 text-gray-400",
   CANCELLED: "bg-red-500/10 text-red-400",
@@ -112,7 +114,7 @@ function CompetitionCard({
   competition: Competition;
   onSelect: () => void;
 }) {
-  const teamCount = (competition as any).teams?.length || 0;
+  const teamCount = ((competition as any).teams || []).filter((t: any) => t && typeof t === "object").length;
   const matchCount = (competition as any).matches?.length || 0;
   const status = (competition as any).status || "UPCOMING";
 
@@ -177,23 +179,29 @@ function CompetitionCard({
 export default function CompetitionsPage() {
   const [competitions, setCompetitions] = useState<Competition[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<Competition | null>(null);
+  const [selected, setSelected] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<"all" | "LEAGUE" | "CUP" | "TOURNAMENT">("all");
 
   useEffect(() => {
     fetchCompetitions();
   }, []);
 
-  // Live refresh: poll selected competition every 30s if it has live/pending matches
+  // Live refresh: poll selected item every 30s if it has live/scheduled matches
   useEffect(() => {
     if (!selected) return;
     const hasActive = (selected as any).matches?.some((m: any) => m.status === "LIVE" || m.status === "SCHEDULED");
     if (!hasActive) return;
 
+    const isTournament = selected._source === "tournament";
+    const endpoint = isTournament ? `/tournaments/${selected._id}` : `/competitions/${selected._id}`;
+
     const interval = setInterval(async () => {
       try {
-        const { data: res } = await api.get(`/competitions/${selected._id}`);
-        if (res.data?.competition) {
+        const { data: res } = await api.get(endpoint);
+        if (isTournament) {
+          const t = res.data?.tournament || res.data;
+          if (t) setSelected({ ...t, type: "TOURNAMENT", _source: "tournament" });
+        } else if (res.data?.competition) {
           setSelected(res.data.competition);
         } else if (res.data) {
           setSelected(res.data as any);
@@ -209,12 +217,41 @@ export default function CompetitionsPage() {
   const fetchCompetitions = async () => {
     setLoading(true);
     try {
-      const { data: res } = await api.get("/competitions", { params: { limit: 50 } });
-      setCompetitions(res.data || []);
+      // Merge real competitions with tournaments (admin creates tournaments via /tournaments)
+      const [compsRes, tournsRes] = await Promise.allSettled([
+        api.get("/competitions", { params: { limit: 50 } }),
+        api.get("/tournaments", { params: { limit: 50 } }),
+      ]);
+      const comps: Competition[] =
+        compsRes.status === "fulfilled" ? compsRes.value.data.data || [] : [];
+      const tourns: any[] =
+        tournsRes.status === "fulfilled" ? tournsRes.value.data.data || [] : [];
+
+      setCompetitions([
+        ...comps,
+        ...tourns.map((t) => ({ ...t, type: "TOURNAMENT", _source: "tournament" })),
+      ]);
     } catch (e) {
       console.error("Failed to fetch competitions:", e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Open detail: tournaments need their full document (groups + bracket matches)
+  const openDetail = async (item: any) => {
+    if (item._source === "tournament") {
+      setSelected({ ...item, loadingDetail: true } as any);
+      try {
+        const { data: res } = await api.get(`/tournaments/${item._id}`);
+        const t = res.data?.tournament || res.data;
+        setSelected({ ...(t || item), type: "TOURNAMENT", _source: "tournament" } as any);
+      } catch (e) {
+        console.error("Failed to fetch tournament:", e);
+        setSelected(item);
+      }
+    } else {
+      setSelected(item);
     }
   };
 
@@ -227,7 +264,7 @@ export default function CompetitionsPage() {
   // ── Detail View ──
   if (selected) {
     const status = (selected as any).status || "UPCOMING";
-    const teamCount = (selected as any).teams?.length || 0;
+    const teamCount = ((selected as any).teams || []).filter((t: any) => t && typeof t === "object").length;
     const matches = (selected as any).matches || [];
 
     return (
@@ -611,12 +648,12 @@ export default function CompetitionsPage() {
           );
         })()}
 
-        {/* Teams */}
-        {(selected as any).teams && (selected as any).teams.length > 0 && (
+        {/* Teams — filter out null padding (tournaments pad to power-of-2) */}
+        {(selected as any).teams && (selected as any).teams.some((t: any) => t && t !== null) && (
           <div className="mt-8">
             <h2 className="text-sm font-bold text-floodlight uppercase tracking-wider mb-4">Participating Teams</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {(selected as any).teams.map((team: any, i: number) => (
+              {(selected as any).teams.filter((t: any) => t && typeof t === "object").map((team: any, i: number) => (
                 <div key={i} className="flex items-center gap-3 bg-surface rounded-xl border border-line/40 px-4 py-3">
                   {team.logo ? (
                     <img src={team.logo} alt="" className="w-8 h-8 rounded-full object-cover border border-line" />
@@ -699,7 +736,7 @@ export default function CompetitionsPage() {
             <CompetitionCard
               key={comp._id}
               competition={comp}
-              onSelect={() => setSelected(comp)}
+              onSelect={() => openDetail(comp)}
             />
           ))}
         </div>

@@ -39,7 +39,9 @@ const morphTransition = {
 };
 
 interface PitchFormationProps {
-  starters: Player[];
+  // Slot-aligned: index i corresponds to formation.slots[i]; may contain holes
+  // (undefined) for slots with no player.
+  starters: (Player | undefined)[];
   formation: Formation;
   statistics?: Statistic[];
   captainId?: string | null;

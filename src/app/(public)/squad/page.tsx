@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { Player, Statistic, Team, Formation, Match, StartingXIEntry, MatchFormation } from "@/types";
-import { PageSpinner } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import PitchFormation from "@/components/shared/PitchFormation";
 import PlayerRevealCard from "@/components/shared/PlayerRevealCard";
@@ -13,6 +12,11 @@ import { getFormation, FORMATION_OPTIONS } from "@/lib/formations";
 import { getSocket, connectSocket } from "@/lib/socket";
 import { motion } from "framer-motion";
 import { Calendar, MapPin, Trophy, Clock } from "lucide-react";
+
+// Number of players fetched per request while infinitely scrolling the roster
+const PLAYERS_PAGE_SIZE = 20;
+// localStorage key that remembers the last squad view (MATCHDAY / FORMATION / position / EXTRA)
+const VIEW_STORAGE_KEY = "squad-view";
 
 const positionFilters = [
   { value: "", label: "All" },
@@ -54,38 +58,6 @@ const gridItemVariants = {
   }),
 };
 
-/* ── Touch/swipe hook for horizontal scroll ── */
-function useSwipeScroll(ref: React.RefObject<HTMLDivElement | null>) {
-  const [translateX, setTranslateX] = useState(0);
-  const startX = useRef<number>(0);
-  const currentX = useRef<number>(0);
-  const isDragging = useRef<boolean>(false);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    startX.current = e.touches[0].clientX;
-    currentX.current = 0;
-    isDragging.current = true;
-    setTranslateX(0);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging.current) return;
-    const delta = e.touches[0].clientX - startX.current;
-    currentX.current = delta;
-    setTranslateX(delta);
-  };
-
-  const handleTouchEnd = () => {
-    isDragging.current = false;
-    // Snap back if movement was small
-    if (Math.abs(currentX.current) < 30) {
-      setTranslateX(0);
-    }
-  };
-
-  return { translateX, handleTouchStart, handleTouchMove, handleTouchEnd };
-}
-
 function getPlayerName(p: Player) {
   return `${p.firstName} ${p.lastName}`;
 }
@@ -117,115 +89,41 @@ function getTeamName(team: string | Team | null): string {
   return team.name || "TBD";
 }
 
-/* ═══════════════════════════════════════════
-   MOCK DATA — used when backend is unavailable
-   ═══════════════════════════════════════════ */
-const MOCK_CLUB_ID = "mock-club-001";
+/* ── Loading skeleton (shown while the page fetches real squad data) ── */
+function SquadSkeleton() {
+  return (
+    <div className="animate-pulse">
+      {/* Filter pills */}
+      <div className="flex gap-1 mb-10 pb-2 overflow-hidden">
+        {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+          <div key={i} className="h-9 w-24 shrink-0 rounded-lg bg-surface-raised border border-line/40" />
+        ))}
+      </div>
+      {/* Pitch placeholder */}
+      <div className="h-[340px] md:h-[480px] max-w-2xl mx-auto rounded-2xl border border-line/40 bg-surface-raised/50" />
+      {/* Bench / player card placeholders */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 mt-8">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div key={i} className="aspect-[3/4] rounded-xl border border-line/40 bg-surface-raised" />
+        ))}
+      </div>
+      <p className="sr-only">Loading squad…</p>
+    </div>
+  );
+}
 
-const MOCK_PLAYERS: Player[] = [
-  // GOALKEEPER
-  { _id: "p01", club: MOCK_CLUB_ID, firstName: "Manuel", lastName: "Neuer", number: 1, position: "GOALKEEPER", status: "ACTIVE", nationality: "Germany", dateOfBirth: "1986-03-27", height: 193, weight: 92, createdAt: "", updatedAt: "" },
-  // DEFENDERS
-  { _id: "p02", club: MOCK_CLUB_ID, firstName: "Trent", lastName: "Alexander-Arnold", number: 66, position: "DEFENDER", status: "ACTIVE", nationality: "England", dateOfBirth: "1998-10-07", height: 175, weight: 72, createdAt: "", updatedAt: "" },
-  { _id: "p03", club: MOCK_CLUB_ID, firstName: "Virgil", lastName: "van Dijk", number: 4, position: "DEFENDER", status: "ACTIVE", nationality: "Netherlands", dateOfBirth: "1991-07-08", height: 193, weight: 92, createdAt: "", updatedAt: "" },
-  { _id: "p04", club: MOCK_CLUB_ID, firstName: "Ruben", lastName: "Dias", number: 3, position: "DEFENDER", status: "ACTIVE", nationality: "Portugal", dateOfBirth: "1997-05-14", height: 186, weight: 82, createdAt: "", updatedAt: "" },
-  { _id: "p05", club: MOCK_CLUB_ID, firstName: "Alphonso", lastName: "Davies", number: 19, position: "DEFENDER", status: "ACTIVE", nationality: "Canada", dateOfBirth: "2000-11-02", height: 181, weight: 75, createdAt: "", updatedAt: "" },
-  // MIDFIELDERS
-  { _id: "p06", club: MOCK_CLUB_ID, firstName: "Kevin", lastName: "De Bruyne", number: 17, position: "MIDFIELDER", status: "ACTIVE", nationality: "Belgium", dateOfBirth: "1991-06-28", height: 181, weight: 76, createdAt: "", updatedAt: "" },
-  { _id: "p07", club: MOCK_CLUB_ID, firstName: "Jude", lastName: "Bellingham", number: 5, position: "MIDFIELDER", status: "ACTIVE", nationality: "England", dateOfBirth: "2003-06-29", height: 186, weight: 78, createdAt: "", updatedAt: "" },
-  { _id: "p08", club: MOCK_CLUB_ID, firstName: "Luka", lastName: "Modric", number: 10, position: "MIDFIELDER", status: "ACTIVE", nationality: "Croatia", dateOfBirth: "1985-09-09", height: 174, weight: 66, createdAt: "", updatedAt: "" },
-  // FORWARDS
-  { _id: "p09", club: MOCK_CLUB_ID, firstName: "Kylian", lastName: "Mbappé", number: 7, position: "FORWARD", status: "ACTIVE", nationality: "France", dateOfBirth: "1998-12-20", height: 178, weight: 73, createdAt: "", updatedAt: "" },
-  { _id: "p10", club: MOCK_CLUB_ID, firstName: "Erling", lastName: "Haaland", number: 9, position: "FORWARD", status: "ACTIVE", nationality: "Norway", dateOfBirth: "2000-07-21", height: 194, weight: 88, createdAt: "", updatedAt: "" },
-  { _id: "p11", club: MOCK_CLUB_ID, firstName: "Vinícius", lastName: "Júnior", number: 11, position: "FORWARD", status: "ACTIVE", nationality: "Brazil", dateOfBirth: "2000-07-12", height: 176, weight: 73, createdAt: "", updatedAt: "" },
-  // BENCH
-  { _id: "p12", club: MOCK_CLUB_ID, firstName: "Thibaut", lastName: "Courtois", number: 25, position: "GOALKEEPER", status: "ACTIVE", nationality: "Belgium", dateOfBirth: "1992-05-11", height: 199, weight: 96, createdAt: "", updatedAt: "" },
-  { _id: "p13", club: MOCK_CLUB_ID, firstName: "Achraf", lastName: "Hakimi", number: 2, position: "DEFENDER", status: "ACTIVE", nationality: "Morocco", dateOfBirth: "1998-11-04", height: 181, weight: 73, createdAt: "", updatedAt: "" },
-  { _id: "p14", club: MOCK_CLUB_ID, firstName: "Federico", lastName: "Valverde", number: 8, position: "MIDFIELDER", status: "ACTIVE", nationality: "Uruguay", dateOfBirth: "1998-07-22", height: 182, weight: 78, createdAt: "", updatedAt: "" },
-  { _id: "p15", club: MOCK_CLUB_ID, firstName: "Bukayo", lastName: "Saka", number: 14, position: "FORWARD", status: "ACTIVE", nationality: "England", dateOfBirth: "2001-09-05", height: 178, weight: 72, createdAt: "", updatedAt: "" },
-  { _id: "p16", club: MOCK_CLUB_ID, firstName: "Phil", lastName: "Foden", number: 20, position: "MIDFIELDER", status: "ACTIVE", nationality: "England", dateOfBirth: "2000-05-28", height: 171, weight: 70, createdAt: "", updatedAt: "" },
-  { _id: "p17", club: MOCK_CLUB_ID, firstName: "Jamal", lastName: "Musaiala", number: 42, position: "MIDFIELDER", status: "ACTIVE", nationality: "Germany", dateOfBirth: "2003-02-26", height: 180, weight: 72, createdAt: "", updatedAt: "" },
-  { _id: "p18", club: MOCK_CLUB_ID, firstName: "Florian", lastName: "Wirtz", number: 10, position: "MIDFIELDER", status: "ACTIVE", nationality: "Germany", dateOfBirth: "2003-05-03", height: 176, weight: 70, createdAt: "", updatedAt: "" },
-];
-
-const MOCK_STATISTICS: Statistic[] = [
-  // Haaland — prolific scorer
-  { _id: "s01", club: MOCK_CLUB_ID, player: "p10", type: "APPEARANCES", value: 35, createdAt: "", updatedAt: "" },
-  { _id: "s02", club: MOCK_CLUB_ID, player: "p10", type: "GOALS", value: 28, createdAt: "", updatedAt: "" },
-  { _id: "s03", club: MOCK_CLUB_ID, player: "p10", type: "ASSISTS", value: 5, createdAt: "", updatedAt: "" },
-  { _id: "s04", club: MOCK_CLUB_ID, player: "p10", type: "MINUTES_PLAYED", value: 2800, createdAt: "", updatedAt: "" },
-  // Mbappé
-  { _id: "s05", club: MOCK_CLUB_ID, player: "p09", type: "APPEARANCES", value: 32, createdAt: "", updatedAt: "" },
-  { _id: "s06", club: MOCK_CLUB_ID, player: "p09", type: "GOALS", value: 22, createdAt: "", updatedAt: "" },
-  { _id: "s07", club: MOCK_CLUB_ID, player: "p09", type: "ASSISTS", value: 10, createdAt: "", updatedAt: "" },
-  { _id: "s08", club: MOCK_CLUB_ID, player: "p09", type: "MINUTES_PLAYED", value: 2700, createdAt: "", updatedAt: "" },
-  // Vinícius
-  { _id: "s09", club: MOCK_CLUB_ID, player: "p11", type: "APPEARANCES", value: 30, createdAt: "", updatedAt: "" },
-  { _id: "s10", club: MOCK_CLUB_ID, player: "p11", type: "GOALS", value: 18, createdAt: "", updatedAt: "" },
-  { _id: "s11", club: MOCK_CLUB_ID, player: "p11", type: "ASSISTS", value: 12, createdAt: "", updatedAt: "" },
-  { _id: "s12", club: MOCK_CLUB_ID, player: "p11", type: "MINUTES_PLAYED", value: 2500, createdAt: "", updatedAt: "" },
-  // De Bruyne
-  { _id: "s13", club: MOCK_CLUB_ID, player: "p06", type: "APPEARANCES", value: 28, createdAt: "", updatedAt: "" },
-  { _id: "s14", club: MOCK_CLUB_ID, player: "p06", type: "GOALS", value: 8, createdAt: "", updatedAt: "" },
-  { _id: "s15", club: MOCK_CLUB_ID, player: "p06", type: "ASSISTS", value: 16, createdAt: "", updatedAt: "" },
-  { _id: "s16", club: MOCK_CLUB_ID, player: "p06", type: "MINUTES_PLAYED", value: 2200, createdAt: "", updatedAt: "" },
-  // Bellingham
-  { _id: "s17", club: MOCK_CLUB_ID, player: "p07", type: "APPEARANCES", value: 33, createdAt: "", updatedAt: "" },
-  { _id: "s18", club: MOCK_CLUB_ID, player: "p07", type: "GOALS", value: 14, createdAt: "", updatedAt: "" },
-  { _id: "s19", club: MOCK_CLUB_ID, player: "p07", type: "ASSISTS", value: 8, createdAt: "", updatedAt: "" },
-  { _id: "s20", club: MOCK_CLUB_ID, player: "p07", type: "MINUTES_PLAYED", value: 2600, createdAt: "", updatedAt: "" },
-  // Neuer — GK
-  { _id: "s21", club: MOCK_CLUB_ID, player: "p01", type: "APPEARANCES", value: 30, createdAt: "", updatedAt: "" },
-  { _id: "s22", club: MOCK_CLUB_ID, player: "p01", type: "CLEAN_SHEETS", value: 12, createdAt: "", updatedAt: "" },
-  { _id: "s23", club: MOCK_CLUB_ID, player: "p01", type: "MINUTES_PLAYED", value: 2700, createdAt: "", updatedAt: "" },
-  // Van Dijk
-  { _id: "s24", club: MOCK_CLUB_ID, player: "p03", type: "APPEARANCES", value: 34, createdAt: "", updatedAt: "" },
-  { _id: "s25", club: MOCK_CLUB_ID, player: "p03", type: "GOALS", value: 3, createdAt: "", updatedAt: "" },
-  { _id: "s26", club: MOCK_CLUB_ID, player: "p03", type: "ASSISTS", value: 2, createdAt: "", updatedAt: "" },
-  { _id: "s27", club: MOCK_CLUB_ID, player: "p03", type: "MINUTES_PLAYED", value: 3000, createdAt: "", updatedAt: "" },
-  { _id: "s28", club: MOCK_CLUB_ID, player: "p03", type: "YELLOW_CARDS", value: 3, createdAt: "", updatedAt: "" },
-
-  // Modric
-  { _id: "s37", club: MOCK_CLUB_ID, player: "p08", type: "APPEARANCES", value: 25, createdAt: "", updatedAt: "" },
-  { _id: "s38", club: MOCK_CLUB_ID, player: "p08", type: "GOALS", value: 4, createdAt: "", updatedAt: "" },
-  { _id: "s39", club: MOCK_CLUB_ID, player: "p08", type: "ASSISTS", value: 8, createdAt: "", updatedAt: "" },
-  { _id: "s40", club: MOCK_CLUB_ID, player: "p08", type: "MINUTES_PLAYED", value: 1800, createdAt: "", updatedAt: "" },
-  // BENCH PLAYERS
-  // Courtois — GK
-  { _id: "s41", club: MOCK_CLUB_ID, player: "p12", type: "APPEARANCES", value: 22, createdAt: "", updatedAt: "" },
-  { _id: "s42", club: MOCK_CLUB_ID, player: "p12", type: "CLEAN_SHEETS", value: 8, createdAt: "", updatedAt: "" },
-  { _id: "s43", club: MOCK_CLUB_ID, player: "p12", type: "MINUTES_PLAYED", value: 1980, createdAt: "", updatedAt: "" },
-  // Hakimi
-  { _id: "s44", club: MOCK_CLUB_ID, player: "p13", type: "APPEARANCES", value: 28, createdAt: "", updatedAt: "" },
-  { _id: "s45", club: MOCK_CLUB_ID, player: "p13", type: "GOALS", value: 3, createdAt: "", updatedAt: "" },
-  { _id: "s46", club: MOCK_CLUB_ID, player: "p13", type: "ASSISTS", value: 7, createdAt: "", updatedAt: "" },
-  { _id: "s47", club: MOCK_CLUB_ID, player: "p13", type: "MINUTES_PLAYED", value: 2300, createdAt: "", updatedAt: "" },
-  // Valverde
-  { _id: "s48", club: MOCK_CLUB_ID, player: "p14", type: "APPEARANCES", value: 30, createdAt: "", updatedAt: "" },
-  { _id: "s49", club: MOCK_CLUB_ID, player: "p14", type: "GOALS", value: 6, createdAt: "", updatedAt: "" },
-  { _id: "s50", club: MOCK_CLUB_ID, player: "p14", type: "ASSISTS", value: 5, createdAt: "", updatedAt: "" },
-  { _id: "s51", club: MOCK_CLUB_ID, player: "p14", type: "MINUTES_PLAYED", value: 2400, createdAt: "", updatedAt: "" },
-  // Saka
-  { _id: "s52", club: MOCK_CLUB_ID, player: "p15", type: "APPEARANCES", value: 31, createdAt: "", updatedAt: "" },
-  { _id: "s53", club: MOCK_CLUB_ID, player: "p15", type: "GOALS", value: 12, createdAt: "", updatedAt: "" },
-  { _id: "s54", club: MOCK_CLUB_ID, player: "p15", type: "ASSISTS", value: 9, createdAt: "", updatedAt: "" },
-  { _id: "s55", club: MOCK_CLUB_ID, player: "p15", type: "MINUTES_PLAYED", value: 2400, createdAt: "", updatedAt: "" },
-  // Foden
-  { _id: "s56", club: MOCK_CLUB_ID, player: "p16", type: "APPEARANCES", value: 29, createdAt: "", updatedAt: "" },
-  { _id: "s57", club: MOCK_CLUB_ID, player: "p16", type: "GOALS", value: 10, createdAt: "", updatedAt: "" },
-  { _id: "s58", club: MOCK_CLUB_ID, player: "p16", type: "ASSISTS", value: 7, createdAt: "", updatedAt: "" },
-  { _id: "s59", club: MOCK_CLUB_ID, player: "p16", type: "MINUTES_PLAYED", value: 2100, createdAt: "", updatedAt: "" },
-  // Musiala
-  { _id: "s60", club: MOCK_CLUB_ID, player: "p17", type: "APPEARANCES", value: 27, createdAt: "", updatedAt: "" },
-  { _id: "s61", club: MOCK_CLUB_ID, player: "p17", type: "GOALS", value: 9, createdAt: "", updatedAt: "" },
-  { _id: "s62", club: MOCK_CLUB_ID, player: "p17", type: "ASSISTS", value: 6, createdAt: "", updatedAt: "" },
-  { _id: "s63", club: MOCK_CLUB_ID, player: "p17", type: "MINUTES_PLAYED", value: 2000, createdAt: "", updatedAt: "" },
-  // Wirtz
-  { _id: "s64", club: MOCK_CLUB_ID, player: "p18", type: "APPEARANCES", value: 26, createdAt: "", updatedAt: "" },
-  { _id: "s65", club: MOCK_CLUB_ID, player: "p18", type: "GOALS", value: 8, createdAt: "", updatedAt: "" },
-  { _id: "s66", club: MOCK_CLUB_ID, player: "p18", type: "ASSISTS", value: 10, createdAt: "", updatedAt: "" },
-  { _id: "s67", club: MOCK_CLUB_ID, player: "p18", type: "MINUTES_PLAYED", value: 1900, createdAt: "", updatedAt: "" },
-];
+/* ── Empty state (no real squad data yet — no fabricated players) ── */
+function EmptySquadState() {
+  return (
+    <div className="py-16 text-center rounded-2xl border border-dashed border-line/50 bg-surface">
+      <p className="text-sm font-semibold text-floodlight">The squad is empty</p>
+      <p className="text-xs text-mist mt-1.5 max-w-md mx-auto">
+        Real player data will appear here as soon as players are added. No sample or placeholder
+        players are ever shown.
+      </p>
+    </div>
+  );
+}
 
 export default function SquadPage() {
   const router = useRouter();
@@ -233,8 +131,35 @@ export default function SquadPage() {
   const [loading, setLoading] = useState(true);
   const [position, setPosition] = useState("MATCHDAY");
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const { translateX, handleTouchStart, handleTouchMove, handleTouchEnd } = useSwipeScroll(scrollRef);
+
+  // Remember the squad view the visitor last used. A URL ?view= parameter wins
+  // over localStorage, so shared links can still pin a specific section.
+  useEffect(() => {
+    let saved: string | null = null;
+    try {
+      const urlView = new URLSearchParams(window.location.search).get("view");
+      saved = urlView !== null ? urlView : localStorage.getItem(VIEW_STORAGE_KEY);
+    } catch {
+      saved = null;
+    }
+    if (saved !== null && positionFilters.some((f) => f.value === saved)) {
+      setPosition(saved);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const changeView = (view: string) => {
+    setPosition(view);
+    try {
+      localStorage.setItem(VIEW_STORAGE_KEY, view);
+      const url = new URL(window.location.href);
+      if (view) url.searchParams.set("view", view);
+      else url.searchParams.delete("view");
+      window.history.replaceState(null, "", url.toString());
+    } catch {
+      // Persistence is a nice-to-have — ignore failures (private mode, storage blocked)
+    }
+  };
 
   // Click handler: flip card for formation/matchday, navigate for position views
   const handlePlayerClick = (player: Player) => {
@@ -262,6 +187,14 @@ export default function SquadPage() {
   const [nextMatch, setNextMatch] = useState<Match | null>(null);
   const [loadingMatch, setLoadingMatch] = useState(true);  // Match formation state (from MatchFormation API)
   const [matchFormation, setMatchFormation] = useState<MatchFormation | null>(null);
+
+  // Infinite scroll — the roster loads a page at a time until every player is fetched
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const pageRef = useRef(1);
+  const hasMoreRef = useRef(false);
+  const busyRef = useRef(false);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   // Refs for socket room management
   const currentMatchIdRef = useRef<string>("");
@@ -373,7 +306,7 @@ export default function SquadPage() {
     setLoading(true);
     try {
       const [playersRes, statsRes, teamRes, matchRes, liveMatchRes] = await Promise.allSettled([
-        api.get("/players", { params: { limit: 50, sort: "lastName" } }),
+        api.get("/players", { params: { limit: PLAYERS_PAGE_SIZE, page: 1, sort: "lastName" } }),
         api.get("/statistics", { params: { limit: 500 } }),
         api.get("/teams", { params: { limit: 10 } }),
         api.get("/matches", { params: { status: "SCHEDULED", sort: "matchDate", limit: 5 } }),
@@ -381,21 +314,24 @@ export default function SquadPage() {
       ]);
 
       if (playersRes.status === "fulfilled") {
-        const apiPlayers = playersRes.value.data.data || [];
-        setPlayers(apiPlayers.length > 0 ? apiPlayers : MOCK_PLAYERS);
+        const pageData = playersRes.value.data || {};
+        setPlayers(pageData.data || []);
+        pageRef.current = 1;
+        const more = 1 < (pageData.totalPages || 1);
+        hasMoreRef.current = more;
+        setHasMore(more);
       } else {
-        setPlayers(MOCK_PLAYERS);
+        console.error("Failed to load players:", playersRes.reason);
+        setPlayers([]);
+        hasMoreRef.current = false;
+        setHasMore(false);
       }
       if (statsRes.status === "fulfilled") {
-        const apiStats = statsRes.value.data.data || [];
-        setStatistics(apiStats.length > 0 ? apiStats : MOCK_STATISTICS);
+        setStatistics(statsRes.value.data.data || []);
       } else {
-        setStatistics(MOCK_STATISTICS);
+        console.error("Failed to load statistics:", statsRes.reason);
+        setStatistics([]);
       }
-
-      // Set mock captain if no team data
-      if (!captainId) setCaptainId("p10"); // Haaland as captain
-      if (!viceCaptainId) setViceCaptainId("p03"); // Van Dijk as vice
 
       // Extract captain from team data — prefer SENIOR team
       let firstTeamId: string | null = null;
@@ -473,53 +409,110 @@ export default function SquadPage() {
     }
   };
 
-  // Build starters: prefer match formation, then team startingXI, then auto-pick
-  const starters = useMemo(() => {
-    // 1. Match formation (admin-set per match)
-    if (matchFormation && matchFormation.startingXI && matchFormation.startingXI.length > 0) {
-      return matchFormation.startingXI
-        .sort((a, b) => a.slotIndex - b.slotIndex)
-        .map((entry) => {
-          const pid = typeof entry.player === "string" ? entry.player : (entry.player as Player)._id;
-          return players.find((p) => p._id === pid);
-        })
-        .filter(Boolean) as Player[];
+  // Load the next page of players when the roster sentinel scrolls into view.
+  // Stops automatically once the API reports we're on the last page.
+  const loadMorePlayers = useCallback(async () => {
+    if (busyRef.current || !hasMoreRef.current) return;
+    busyRef.current = true;
+    setLoadingMore(true);
+    try {
+      const nextPage = pageRef.current + 1;
+      const res = await api.get("/players", {
+        params: { limit: PLAYERS_PAGE_SIZE, page: nextPage, sort: "lastName" },
+      });
+      const resData = res.data || {};
+      const incoming: Player[] = resData.data || [];
+      setPlayers((prev) => {
+        const seen = new Set(prev.map((p) => p._id));
+        return [...prev, ...incoming.filter((p) => !seen.has(p._id))];
+      });
+      pageRef.current = nextPage;
+      const more = nextPage < (resData.totalPages || 1);
+      hasMoreRef.current = more;
+      setHasMore(more);
+    } catch (e) {
+      console.error("Failed to load more players:", e);
+    } finally {
+      busyRef.current = false;
+      setLoadingMore(false);
     }
-    // 2. Team startingXI (admin-set default)
-    if (teamStartingXI.length > 0) {
-      return teamStartingXI
-        .sort((a, b) => a.slotIndex - b.slotIndex)
-        .map((entry) => {
-          const pid = typeof entry.player === "string" ? entry.player : entry.player._id;
-          return players.find((p) => p._id === pid);
-        })
-        .filter(Boolean) as Player[];
+  }, []);
+
+  // Watch the sentinel at the bottom of the roster and load more when visible
+  useEffect(() => {
+    if (!hasMore) return;
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          loadMorePlayers();
+        }
+      },
+      { rootMargin: "400px 0px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, loadMorePlayers]);
+
+  // Build starters (slot-aligned — index i matches pitch slot i). Entries that
+  // reference a player who no longer exists are skipped instead of crashing.
+  const starters = useMemo<(Player | undefined)[]>(() => {
+    const slotCount = formation.slots.length;
+    const bySlot: (Player | undefined)[] = new Array(slotCount).fill(undefined);
+
+    // 1. Match formation (admin-set per match), 2. Team startingXI (admin-set default)
+    const source =
+      matchFormation && matchFormation.startingXI && matchFormation.startingXI.length > 0
+        ? matchFormation.startingXI
+        : teamStartingXI.length > 0
+          ? teamStartingXI
+          : null;
+
+    if (source) {
+      const ordered = [...source].sort((a, b) => a.slotIndex - b.slotIndex);
+      for (const entry of ordered) {
+        const entryPlayer = entry && entry.player ? entry.player : null;
+        if (!entryPlayer) continue;
+        const pid = typeof entryPlayer === "string" ? entryPlayer : entryPlayer?._id;
+        if (!pid) continue;
+        const p = players.find((pl) => pl._id === pid);
+        if (p && entry.slotIndex >= 0 && entry.slotIndex < slotCount) {
+          bySlot[entry.slotIndex] = p;
+        }
+      }
+      return bySlot;
     }
+
     // 3. Auto-pick by position priority
-    return getStarters(players, formation);
+    const picks = getStarters(players, formation);
+    picks.forEach((p, i) => {
+      if (i < slotCount) bySlot[i] = p;
+    });
+    return bySlot;
   }, [matchFormation, teamStartingXI, players, formation]);
 
-  // Build bench: prefer match formation, then team bench
+  // Build bench: prefer match formation, then team bench (null-safe)
   const benchPlayers = useMemo(() => {
     // 1. Match formation bench (admin-set per match)
     if (matchFormation && matchFormation.bench && matchFormation.bench.length > 0) {
       return matchFormation.bench
         .map((p) => {
-          const pid = typeof p === "string" ? p : (p as Player)._id;
-          return players.find((pl) => pl._id === pid);
+          const pid = typeof p === "string" ? p : p && p._id;
+          return pid ? players.find((pl) => pl._id === pid) : undefined;
         })
-        .filter(Boolean) as Player[];
+        .filter((p): p is Player => !!p) as Player[];
     }
     // 2. Team bench (admin-set default)
     if (teamBench.length > 0) {
       return teamBench
         .map((p) => players.find((pl) => pl._id === p._id))
-        .filter(Boolean) as Player[];
+        .filter((p): p is Player => !!p) as Player[];
     }
     return [];
   }, [matchFormation, teamBench, players]);
 
-  const starterIds = new Set(starters.map((p) => p._id));
+  const starterIds = new Set(starters.map((p) => p?._id).filter((id): id is string => !!id));
   // Only show team members as reserves (not all club players)
   const reserves = players.filter((p) => !starterIds.has(p._id) && (teamPlayerIds.size === 0 || teamPlayerIds.has(p._id)));
 
@@ -550,7 +543,7 @@ export default function SquadPage() {
           {positionFilters.map((pos) => (
             <button
               key={pos.value}
-              onClick={() => setPosition(pos.value)}
+              onClick={() => changeView(pos.value)}
               className={cn(
                 "px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors",
                 position === pos.value
@@ -564,7 +557,9 @@ export default function SquadPage() {
         </div>
 
         {loading ? (
-          <PageSpinner />
+          <SquadSkeleton />
+        ) : players.length === 0 ? (
+          <EmptySquadState />
         ) : position === "MATCHDAY" ? (
           /* ═══════════ MATCH DAY XI VIEW ═══════════ */
           <div className="space-y-10">
@@ -673,7 +668,7 @@ export default function SquadPage() {
 
             {/* Pitch with players — match day mode */}
             <PitchFormation
-              starters={starters.slice(0, formation.slots.length)}
+              starters={starters}
               formation={formation}
               statistics={statistics}
               captainId={captainId}
@@ -763,7 +758,7 @@ export default function SquadPage() {
 
             {/* Pitch with players */}
             <PitchFormation
-              starters={starters.slice(0, formation.slots.length)}
+              starters={starters}
               formation={formation}
               statistics={statistics}
               captainId={captainId}
@@ -831,40 +826,8 @@ export default function SquadPage() {
               <span className="h-px flex-1 bg-line" />
               <span className="text-xs text-mist font-mono">{players.length} players</span>
             </div>
-            {/* Mobile: horizontal scroll with swipe support */}
-            <div 
-              ref={scrollRef}
-              className="overflow-x-auto overscroll-contain"
-              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-            >
-              <div 
-                className="flex gap-3 md:hidden"
-                style={{ width: 'max-content', paddingBottom: '8px' }}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-              >
-                {players.map((player, i) => (
-                  <motion.div
-                    key={player._id}
-                    custom={i}
-                    variants={gridItemVariants}
-                    initial="hidden"
-                    animate="visible"
-                    className="shrink-0"
-                    style={{ width: 'calc((100vw - 64px) / 2.5)', maxWidth: '180px' }}
-                  >
-                    <PlayerGridCard
-                      player={player}
-                      isCaptain={player._id === captainId}
-                      onClick={() => handlePlayerClick(player)}
-                    />
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-            {/* Desktop: grid */}
-            <div className="hidden md:block grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+            {/* Responsive vertical grid (no horizontal swipe) */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
               {players.map((player, i) => (
                 <motion.div
                   key={player._id}
@@ -898,40 +861,8 @@ export default function SquadPage() {
                     <span className="h-px flex-1 bg-line" />
                     <span className="text-xs text-mist font-mono">{group.length}</span>
                   </div>
-                  {/* Mobile: horizontal scroll with swipe support */}
-                  <div 
-                    ref={scrollRef}
-                    className="overflow-x-auto overscroll-contain"
-                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                  >
-                    <div 
-                      className="flex gap-3 md:grid md:grid-cols-5 md:gap-4"
-                      style={{ width: 'max-content', paddingBottom: '8px' }}
-                      onTouchStart={handleTouchStart}
-                      onTouchMove={handleTouchMove}
-                      onTouchEnd={handleTouchEnd}
-                    >
-                      {group.map((player, i) => (
-                        <motion.div
-                          key={player._id}
-                          custom={i}
-                          variants={gridItemVariants}
-                          initial="hidden"
-                          animate="visible"
-                          className="shrink-0 md:shrink-auto"
-                          style={{ width: 'calc((100vw - 64px) / 2.5)', maxWidth: '180px' }}
-                        >
-                          <PlayerGridCard
-                            player={player}
-                            isCaptain={player._id === captainId}
-                            onClick={() => handlePlayerClick(player)}
-                          />
-                        </motion.div>
-                      ))}
-                    </div>
-                  </div>
-                  {/* Desktop: grid */}
-                  <div className="hidden md:block md:grid md:grid-cols-5 md:gap-4">
+                  {/* Responsive vertical grid (no horizontal swipe) */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 md:gap-4">
                     {group.map((player, i) => (
                       <motion.div
                         key={player._id}
@@ -951,6 +882,22 @@ export default function SquadPage() {
                 </section>
               );
             })}
+          </div>
+        )}
+
+        {/* Infinite scroll sentinel — loads the next page of players */}
+        {!loading && players.length > 0 && hasMore && (
+          <div ref={sentinelRef} className="flex items-center justify-center py-6">
+            <span className="flex items-center gap-2 text-xs text-mist font-mono">
+              {loadingMore ? (
+                <>
+                  <span className="h-3.5 w-3.5 rounded-full border-2 border-line border-t-club-accent animate-spin" />
+                  Loading more players…
+                </>
+              ) : (
+                "Keep scrolling to load the full squad"
+              )}
+            </span>
           </div>
         )}
       </div>
