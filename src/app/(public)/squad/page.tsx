@@ -690,7 +690,7 @@ export default function SquadPage() {
                   </span>
                   <span className="h-px flex-1 bg-line/40" />
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                <div className="flex flex-wrap justify-center gap-x-8 gap-y-8 md:gap-x-12 md:gap-y-10 pt-2">
                   {benchPlayers.map((player, i) => (
                     <motion.div
                       key={`bench-${player._id}`}
@@ -699,7 +699,7 @@ export default function SquadPage() {
                       initial="hidden"
                       animate="visible"
                     >
-                      <ReserveCard
+                      <BenchPlayerCircle
                         player={player}
                         isCaptain={player._id === captainId}
                         onClick={() => setSelectedPlayer(player)}
@@ -781,7 +781,7 @@ export default function SquadPage() {
                   </span>
                   <span className="h-px flex-1 bg-line/40" />
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                <div className="flex flex-wrap justify-center gap-x-8 gap-y-8 md:gap-x-12 md:gap-y-10 pt-2">
                   {benchPlayers.map((player, i) => (
                     <motion.div
                       key={`bench-${player._id}`}
@@ -790,7 +790,7 @@ export default function SquadPage() {
                       initial="hidden"
                       animate="visible"
                     >
-                      <ReserveCard
+                      <BenchPlayerCircle
                         player={player}
                         isCaptain={player._id === captainId}
                         onClick={() => setSelectedPlayer(player)}
@@ -941,8 +941,8 @@ function getStarters(all: Player[], formation: Formation): Player[] {
   return picks;
 }
 
-/* ── Reserve Card ── */
-function ReserveCard({
+/* ── Bench player — circle avatar + name below, matching the formation slots ── */
+function BenchPlayerCircle({
   player,
   isCaptain,
   onClick,
@@ -954,30 +954,38 @@ function ReserveCard({
   return (
     <button
       onClick={onClick}
-      className="group aspect-[3/4] bg-surface rounded-xl overflow-hidden relative border border-line/40 transition-all duration-300 hover:border-pitch-accent/40 hover:shadow-lg text-left"
+      aria-label={getPlayerName(player)}
+      className="group flex flex-col items-center gap-2 w-20 md:w-24 text-center outline-none"
     >
-      {player.photo ? (
-        <img
-          src={player.photo}
-          alt={getPlayerName(player)}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center bg-surface-raised">
-          <span className="text-3xl font-bold text-line font-display">{player.firstName?.charAt(0)}</span>
+      <div className="relative">
+        {isCaptain && (
+          <div className="absolute -top-1 -right-1 z-10 w-5 h-5 rounded-full bg-gradient-to-br from-card-gold to-amber-600 border border-amber-300/50 flex items-center justify-center shadow-md animate-captain-glow">
+            <span className="text-[8px] font-bold text-white">C</span>
+          </div>
+        )}
+        <div className="w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-line/80 bg-surface-raised shadow-sm transition-all duration-200 group-hover:border-pitch-accent group-hover:shadow-md group-hover:scale-105">
+          {player.photo ? (
+            <img
+              src={player.photo}
+              alt={getPlayerName(player)}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-club-primary to-pitch-green">
+              <span className="text-lg md:text-xl font-bold text-white font-display">
+                {player.firstName?.charAt(0)}
+              </span>
+            </div>
+          )}
         </div>
-      )}
-      {isCaptain && (
-        <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-gradient-to-br from-card-gold to-amber-600 border border-amber-300/50 flex items-center justify-center shadow-md animate-captain-glow">
-          <span className="text-[8px] font-bold text-white">C</span>
-        </div>
-      )}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
-        <p className="text-[10px] font-bold text-white truncate">
+      </div>
+      <div className="min-w-0">
+        <p className="text-[11px] md:text-xs font-bold text-floodlight truncate transition-colors group-hover:text-pitch-accent">
           {player.firstName} {player.lastName}
         </p>
-        <p className="text-[8px] text-white/50 font-mono">
-          {positionShort[player.position]}{player.number ? ` · #${player.number}` : ""}
+        <p className="text-[9px] md:text-[10px] text-mist font-mono mt-0.5">
+          {positionShort[player.position]}
+          {player.number ? ` · #${player.number}` : ""}
         </p>
       </div>
     </button>

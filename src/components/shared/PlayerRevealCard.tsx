@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, Calendar, Ruler, Weight, Share2, Check } from "lucide-react";
-import Image from "next/image";
+import SmartPortraitImage from "./SmartPortraitImage";
 import { Player, Statistic, StatisticType } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -165,8 +165,8 @@ export default function PlayerRevealCard({ player, statistics, onClose }: Player
           <div className="absolute inset-0 bg-black/85 backdrop-blur-xl" />
 
           <div
-            className="relative z-10"
-            style={{ perspective: "1200px", width: "320px", height: "448px" }}
+            className="relative z-10 w-[min(370px,92vw)] aspect-[2/3]"
+            style={{ perspective: "1200px" }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* ══════ PACK PHASE ══════ */}
@@ -204,7 +204,7 @@ export default function PlayerRevealCard({ player, statistics, onClose }: Player
                     )} />
                   </motion.div>
                   <motion.button
-                    className="absolute bottom-[-52px] left-1/2 -translate-x-1/2 px-5 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm text-white/70 text-xs font-mono hover:bg-white/20 hover:text-white transition-all z-30"
+                    className="absolute bottom-[-44px] left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm text-white/70 text-[11px] font-mono hover:bg-white/20 hover:text-white transition-all z-30 whitespace-nowrap"
                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
                     onClick={(e) => { e.stopPropagation(); handleSkip(); }}
                   >
@@ -246,7 +246,7 @@ export default function PlayerRevealCard({ player, statistics, onClose }: Player
                             <X className="h-3.5 w-3.5" />
                           </button>
                           <motion.span
-                            className="text-5xl font-black text-white font-display leading-none drop-shadow-lg"
+                            className="text-4xl md:text-5xl font-black text-white font-display leading-none drop-shadow-lg"
                             initial={{ scale: 2, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             transition={{ delay: 0.3, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
@@ -255,7 +255,7 @@ export default function PlayerRevealCard({ player, statistics, onClose }: Player
                           </motion.span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-2xl font-black text-white font-display leading-none drop-shadow-lg">
+                          <span className="text-xl md:text-2xl font-black text-white font-display leading-none drop-shadow-lg">
                             {positionLabel[player.position]}
                           </span>
                           <button onClick={handleShare}
@@ -269,47 +269,49 @@ export default function PlayerRevealCard({ player, statistics, onClose }: Player
                       </div>
 
                       {/* Player photo */}
-                      <div className="relative my-1 h-[250px] shrink-0">
+                      <div className="relative my-1 flex-[3] min-h-0 shrink-0">
                         {player.photo ? (
-                          <Image src={player.photo} alt={`${player.firstName} ${player.lastName}`}
-                            fill
-                            className="object-cover object-top rounded-xl"
-                            style={{ maskImage: "linear-gradient(to bottom, black 60%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, black 60%, transparent 100%)" }}
+                          <SmartPortraitImage
+                            src={player.photo}
+                            alt={`${player.firstName} ${player.lastName}`}
+                            sizes="(max-width: 640px) 88vw, 360px"
+                            className="object-cover rounded-xl"
+                            mask="linear-gradient(to bottom, black 72%, transparent 100%)"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center rounded-xl bg-black/20">
-                            <span className="text-8xl font-bold text-white/20 font-display">{player.firstName?.charAt(0)}</span>
+                            <span className="text-6xl md:text-8xl font-bold text-white/20 font-display">{player.firstName?.charAt(0)}</span>
                           </div>
                         )}
                         {player.number && (
                           <div className="absolute bottom-0 right-2 pointer-events-none">
-                            <span className="text-[120px] font-black text-white/[0.07] font-display leading-none select-none">{player.number}</span>
+                            <span className="text-[80px] md:text-[120px] font-black text-white/[0.07] font-display leading-none select-none">{player.number}</span>
                           </div>
                         )}
                       </div>
 
                       {/* Bottom */}
-                      <div className="space-y-1.5">
+                      <div className="space-y-1.5 shrink-0">
                         <div className="text-center">
-                          <p className="text-xs text-white/60 font-mono uppercase tracking-widest mb-0.5">{player.nationality || ""}</p>
-                          <h2 className="text-xl font-black text-white font-display leading-tight uppercase tracking-wide">{player.firstName}</h2>
-                          <h2 className="text-2xl font-black text-white font-display leading-tight uppercase tracking-wide">{player.lastName}</h2>
+                          <p className="text-[10px] text-white/60 font-mono uppercase tracking-widest mb-0.5">{player.nationality || ""}</p>
+                          <h2 className="text-lg md:text-xl font-black text-white font-display leading-tight uppercase tracking-wide">{player.firstName}</h2>
+                          <h2 className="text-xl md:text-2xl font-black text-white font-display leading-tight uppercase tracking-wide">{player.lastName}</h2>
                         </div>
-                        <div className="grid grid-cols-6 gap-1.5">
+                        <div className="grid grid-cols-6 gap-1">
                           {faceStats.map((stat) => (
                             <div key={stat.label} className="text-center">
-                              <p className={cn("text-xl font-black font-mono leading-none drop-shadow-md", getStatColor(stat.value))}>{stat.value}</p>
-                              <p className="text-[9px] text-white/60 font-mono uppercase mt-1 font-bold tracking-wider">{stat.label}</p>
+                              <p className={cn("text-base md:text-xl font-black font-mono leading-none drop-shadow-md", getStatColor(stat.value))}>{stat.value}</p>
+                              <p className="text-[8px] md:text-[9px] text-white/60 font-mono uppercase mt-0.5 font-bold tracking-wider">{stat.label}</p>
                             </div>
                           ))}
                         </div>
-                        <div className="flex items-center justify-between text-[11px] text-white/50 font-mono border-t border-white/15 pt-2.5">
+                        <div className="flex items-center justify-between text-[10px] md:text-[11px] text-white/50 font-mono border-t border-white/15 pt-2">
                           {player.height && <span className="flex items-center gap-1"><Ruler className="h-2.5 w-2.5" />{player.height}cm</span>}
                           {player.weight && <span className="flex items-center gap-1"><Weight className="h-2.5 w-2.5" />{player.weight}kg</span>}
                           {player.dateOfBirth && <span className="flex items-center gap-1"><Calendar className="h-2.5 w-2.5" />AGE {age}</span>}
                           {player.number && <span className="font-bold">#{player.number}</span>}
                         </div>
-                      </div>                      <p className="text-[9px] text-white/30 font-mono text-center mt-2">TAP TO FLIP</p>
+                      </div>                      <p className="text-[9px] text-white/30 font-mono text-center mt-1 shrink-0">TAP TO FLIP</p>
                       </div>
                   </div>
 
@@ -322,38 +324,38 @@ export default function PlayerRevealCard({ player, statistics, onClose }: Player
                       style={{ backgroundImage: `repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(255,255,255,0.5) 10px, rgba(255,255,255,0.5) 11px)` }}
                     />
 
-                    <div className="relative h-full flex flex-col p-5 z-10">
+                    <div className="relative h-full flex flex-col p-3 md:p-5 z-10">
                       {/* Header row: identical layout to front face */}
                       <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 md:gap-2 min-w-0 flex-1">
                           <button onClick={(e) => { e.stopPropagation(); handleClose(); }}
-                            className="p-1.5 rounded-full bg-black/20 backdrop-blur-sm text-white/50 hover:text-white hover:bg-black/40 transition-colors"
+                            className="p-1.5 rounded-full bg-black/20 backdrop-blur-sm text-white/50 hover:text-white hover:bg-black/40 transition-colors shrink-0"
                           >
-                           {shareState === "copied" ? <Check className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />}
+                            <X className="h-3.5 w-3.5" />
                           </button>
-                          <div>
-                            <p className="text-[10px] text-white/40 font-mono uppercase tracking-widest">Player Stats</p>
-                            <h3 className="text-base font-bold text-white font-display">{player.firstName} {player.lastName}</h3>
+                          <div className="min-w-0">
+                            <p className="text-[9px] md:text-[10px] text-white/40 font-mono uppercase tracking-widest">Player Stats</p>
+                            <h3 className="text-xs md:text-base font-bold text-white font-display truncate">{player.firstName} {player.lastName}</h3>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
                           <div className={cn(
-                            "w-11 h-11 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg border border-white/20",
+                            "w-9 h-9 md:w-11 md:h-11 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg border border-white/20",
                             rating >= 85 ? "from-amber-400 to-yellow-500" : rating >= 75 ? "from-gray-300 to-gray-400" : "from-yellow-700 to-yellow-800"
                           )}>
-                            <span className="text-lg font-black text-white font-display">{rating}</span>
+                            <span className="text-sm md:text-lg font-black text-white font-display">{rating}</span>
                           </div>
                           <button onClick={handleShare}
                             className={cn("p-1.5 rounded-full backdrop-blur-sm transition-colors",
                               shareState === "copied" ? "bg-emerald-500/30 text-emerald-400" : "bg-black/20 text-white/50 hover:text-white hover:bg-black/40"
                             )}
                           >
-                             <X className="h-3.5 w-3.5" />
+                            {shareState === "copied" ? <Check className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />}
                           </button>
                         </div>
                       </div>
 
-                      <div className="flex-1 space-y-3">
+                      <div className="flex-1 space-y-2 md:space-y-3">
                         <p className="text-[9px] text-white/30 font-mono uppercase tracking-widest">Career Statistics</p>
                         {[
                           { label: "Appearances", value: careerStats!.appearances, max: 40 },
@@ -389,12 +391,12 @@ export default function PlayerRevealCard({ player, statistics, onClose }: Player
                         )}
                       </div>
 
-                      <div className="flex gap-2 flex-wrap pt-3 border-t border-white/5">
-                        {player.nationality && <span className="flex items-center gap-1 text-[10px] text-white/40 bg-white/5 rounded-full px-2 py-0.5"><MapPin className="h-2.5 w-2.5" /> {player.nationality}</span>}
-                        {player.dateOfBirth && <span className="flex items-center gap-1 text-[10px] text-white/40 bg-white/5 rounded-full px-2 py-0.5"><Calendar className="h-2.5 w-2.5" /> Age {age}</span>}
-                        {player.height && <span className="flex items-center gap-1 text-[10px] text-white/40 bg-white/5 rounded-full px-2 py-0.5"><Ruler className="h-2.5 w-2.5" /> {player.height}cm</span>}
-                        {player.weight && <span className="flex items-center gap-1 text-[10px] text-white/40 bg-white/5 rounded-full px-2 py-0.5"><Weight className="h-2.5 w-2.5" /> {player.weight}kg</span>}
-                      </div>                      <p className="text-[9px] text-white/30 font-mono text-center mt-2">TAP TO FLIP</p>
+                      <div className="flex gap-1.5 md:gap-2 flex-wrap pt-2 md:pt-3 border-t border-white/5">
+                        {player.nationality && <span className="flex items-center gap-1 text-[9px] md:text-[10px] text-white/40 bg-white/5 rounded-full px-1.5 md:px-2 py-0.5"><MapPin className="h-2 w-2 md:h-2.5 md:w-2.5" /> {player.nationality}</span>}
+                        {player.dateOfBirth && <span className="flex items-center gap-1 text-[9px] md:text-[10px] text-white/40 bg-white/5 rounded-full px-1.5 md:px-2 py-0.5"><Calendar className="h-2 w-2 md:h-2.5 md:w-2.5" /> Age {age}</span>}
+                        {player.height && <span className="flex items-center gap-1 text-[9px] md:text-[10px] text-white/40 bg-white/5 rounded-full px-1.5 md:px-2 py-0.5"><Ruler className="h-2 w-2 md:h-2.5 md:w-2.5" /> {player.height}cm</span>}
+                        {player.weight && <span className="flex items-center gap-1 text-[9px] md:text-[10px] text-white/40 bg-white/5 rounded-full px-1.5 md:px-2 py-0.5"><Weight className="h-2 w-2 md:h-2.5 md:w-2.5" /> {player.weight}kg</span>}
+                      </div>                      <p className="text-[9px] text-white/30 font-mono text-center mt-1 md:mt-2 shrink-0">TAP TO FLIP</p>
                       </div>
                   </div>
                 </motion.div>

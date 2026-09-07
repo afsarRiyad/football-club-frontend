@@ -55,8 +55,8 @@ function getBarColor(val: number): string {
   if (val >= 85) return "bg-amber-400";
   if (val >= 75) return "bg-emerald-400";
   if (val >= 65) return "bg-blue-400";
-  if (val >= 50) return "bg-mist/60";
-  return "bg-mist/40";
+  if (val >= 50) return "bg-mist";
+  return "bg-mist/80";
 }
 
 function aggregateStats(stats: Statistic[], playerId: string) {
@@ -251,7 +251,7 @@ export default function PlayerProfilePage() {
             {/* Name + Position */}
             <div>
               {player.number && (
-                <span className="text-5xl font-mono font-bold text-mist/60 tabular-nums block mb-1">
+                <span className="block mb-1 text-6xl font-black font-mono text-floodlight/60 tabular-nums leading-none select-none">
                   #{player.number}
                 </span>
               )}
@@ -280,14 +280,14 @@ export default function PlayerProfilePage() {
                 ))}
               </div>
               {/* Stat bars */}
-              <div className="mt-4 space-y-2">
+              <div className="mt-4 space-y-2.5">
                 {faceStats.map((stat) => (
                   <div key={stat.label} className="flex items-center gap-2">
                     <span className="text-[10px] font-mono font-bold text-mist w-7">{stat.label}</span>
-                    <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                    <div className="flex-1 h-2 bg-line/60 rounded-full overflow-hidden">
                       <div
                         className={cn("h-full rounded-full transition-all", getBarColor(stat.value))}
-                        style={{ width: `${stat.value}%` }}
+                        style={{ width: `${Math.max(stat.value, 4)}%` }}
                       />
                     </div>
                     <span className="text-[10px] font-mono font-bold text-floodlight w-5 text-right">{stat.value}</span>
