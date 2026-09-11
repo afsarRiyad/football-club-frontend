@@ -13,6 +13,21 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "res.cloudinary.com" },
     ],
   },
+
+  async redirects() {
+    return [
+      // Consolidate SEO on the canonical domain: the old *.vercel.app host
+      // permanently redirects, so the two never compete as duplicate sites.
+      // Only this specific production alias matches — preview deployments
+      // (project-git-branch.vercel.app) are unaffected.
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "nayadigantaclub.vercel.app" }],
+        destination: "https://www.nayadiganta.club/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

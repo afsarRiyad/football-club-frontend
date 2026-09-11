@@ -53,8 +53,11 @@ export default function AboutPage() {
     );
   }
 
+  // Full postal line: street/area, city, country (e.g. "Bhuiyyarhat Chowrasta, Kabirhat, Bangladesh").
   const location = club.location
-    ? [club.location.city, club.location.country].filter(Boolean).join(", ")
+    ? [club.location.address, club.location.city, club.location.country]
+        .filter(Boolean)
+        .join(", ")
     : null;
 
   const stadiumName = getStadiumName((club as any).stadium);
