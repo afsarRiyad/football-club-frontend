@@ -78,7 +78,7 @@ export default function FileUpload({
           Drag and drop files here, or{" "}
           <span className="text-pitch-accent font-medium">browse</span>
         </p>
-        <p className="text-xs text-mist/60 mt-1">
+        <p className="text-xs text-mist/70 mt-1">
           {multiple ? `Up to ${maxFiles} files` : "Single file"} &bull;{" "}
           {accept}
         </p>

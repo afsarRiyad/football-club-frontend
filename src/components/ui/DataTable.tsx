@@ -141,6 +141,7 @@ export default function DataTable<T extends Record<string, any>>({
               onClick={() => onPageChange(currentPage - 1)}
               disabled={currentPage === 1}
               className="p-1.5 rounded-lg hover:bg-surface-raised disabled:opacity-50 disabled:cursor-not-allowed text-mist"
+              aria-label="Previous page"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -148,6 +149,7 @@ export default function DataTable<T extends Record<string, any>>({
               onClick={() => onPageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
               className="p-1.5 rounded-lg hover:bg-surface-raised disabled:opacity-50 disabled:cursor-not-allowed text-mist"
+              aria-label="Next page"
             >
               <ChevronRight className="h-4 w-4" />
             </button>

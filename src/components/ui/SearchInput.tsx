@@ -37,7 +37,7 @@ export default function SearchInput({
 
   return (
     <div className={cn("relative", className)}>
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-mist/60" />
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-mist/70" />
       <input
         type="text"
         value={localValue}

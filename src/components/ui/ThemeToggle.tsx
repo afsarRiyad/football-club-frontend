@@ -19,6 +19,7 @@ export default function ThemeToggle({ className }: ThemeToggleProps) {
         "p-2 rounded-lg text-mist hover:text-floodlight hover:bg-surface-raised transition-all duration-150",
         className
       )}
+      aria-label={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
       title={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
     >
       {resolvedTheme === "dark" ? (

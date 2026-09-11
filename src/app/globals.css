@@ -99,7 +99,7 @@
   /* Legacy tokens used across the codebase */
   --color-mist: var(--text-secondary);
   --color-floodlight: var(--text-primary);
-  --color-pitch-night: var(--background);
+  --color-pitch-night: var(--background);  /* Keep pitch-night = background for consistency */
   --color-pitch-accent: var(--club-accent);
   --color-card-gold: var(--club-gold);
   --color-alert-red: var(--error);

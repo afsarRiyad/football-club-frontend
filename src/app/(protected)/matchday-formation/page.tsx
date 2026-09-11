@@ -127,7 +127,7 @@ function PitchFormation({
                   }`}
                 >
                   {player?.photo ? (
-                    <Image src={player.photo} alt="" width={56} height={56} className="w-full h-full rounded-full object-cover" />
+                    <Image src={player.photo} alt={`${player.firstName} ${player.lastName}`} width={56} height={56} className="w-full h-full rounded-full object-cover" />
                   ) : player ? (
                     <span className="text-white font-bold text-sm">{player.firstName?.[0]}</span>
                   ) : (

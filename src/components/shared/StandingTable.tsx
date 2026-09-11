@@ -33,7 +33,7 @@ export default function StandingTable({ standings }: StandingTableProps) {
               <td className="py-3 px-4">
                 <div className="flex items-center gap-3">
                   {typeof s.team !== "string" && s.team.logo ? (
-                    <Image src={s.team.logo} alt={s.team.name} width={24} height={24} className="h-6 w-6 rounded-full object-cover border border-line" />
+                    <Image src={s.team.logo} alt={s.team.name} width={24} height={24} className="h-6 w-6 rounded-full object-cover border border-line" sizes="24px" />
                   ) : (
                     <div className="h-6 w-6 rounded-full bg-surface-raised border border-line" />
                   )}

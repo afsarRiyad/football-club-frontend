@@ -27,6 +27,8 @@ export default function NewsCard({ news, featured = false }: NewsCardProps) {
               alt={news.title}
               fill
               className="object-cover group-hover:scale-[1.02] transition-transform duration-500"
+              sizes={featured ? "(max-width: 640px) 100vw, (max-width: 768px) 50vw, 50vw" : "(max-width: 640px) 100vw, (max-width: 768px) 75vw, 50vw"}
+              loading="lazy"
             />
           </div>
         )}

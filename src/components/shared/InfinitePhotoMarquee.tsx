@@ -8,12 +8,12 @@ import { Gallery } from "@/types";
 
 // Fallback images shown while loading or if no gallery data exists
 const FALLBACK_PHOTOS = [
-  "https://images.unsplash.com/photo-1552667466-07770ae110d0?w=500",
-  "https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=500",
-  "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=500",
-  "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=500",
-  "https://images.unsplash.com/photo-1614632537190-23e4146777db?w=500",
-  "https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=500",
+  "https://images.unsplash.com/photo-1552667466-07770ae110d0?w=300",
+  "https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=300",
+  "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=300",
+  "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=300",
+  "https://images.unsplash.com/photo-1614632537190-23e4146777db?w=300",
+  "https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=300",
 ];
 
 function MarqueeRow({
@@ -51,6 +51,7 @@ function MarqueeRow({
               alt={`Club photo ${(i % (loopImages.length / 2)) + 1}`}
               fill
               className="object-cover transition-transform duration-400 hover:scale-110"
+              sizes="280px"
             />
           </div>
         ))}

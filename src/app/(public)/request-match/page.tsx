@@ -101,10 +101,11 @@ export default function RequestMatchPage() {
         {/* Contact Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label htmlFor="req-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
               Your Name *
             </label>
             <input
+              id="req-name"
               type="text"
               required
               value={name}
@@ -114,12 +115,13 @@ export default function RequestMatchPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label htmlFor="req-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
               Email *
             </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
+                id="req-email"
                 type="email"
                 required
                 value={email}
@@ -133,12 +135,13 @@ export default function RequestMatchPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label htmlFor="req-phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
               Phone (optional)
             </label>
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
+                id="req-phone"
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
@@ -148,12 +151,13 @@ export default function RequestMatchPage() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label htmlFor="req-team" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
               Your Team Name *
             </label>
             <div className="relative">
               <Shield className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
+                id="req-team"
                 type="text"
                 required
                 value={teamName}
@@ -167,12 +171,13 @@ export default function RequestMatchPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label htmlFor="req-date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
               Preferred Date
             </label>
             <div className="relative">
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
+                id="req-date"
                 type="date"
                 value={preferredDate}
                 onChange={(e) => setPreferredDate(e.target.value)}
@@ -181,12 +186,13 @@ export default function RequestMatchPage() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label htmlFor="req-venue" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
               Preferred Venue
             </label>
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
+                id="req-venue"
                 type="text"
                 value={preferredVenue}
                 onChange={(e) => setPreferredVenue(e.target.value)}
@@ -198,10 +204,11 @@ export default function RequestMatchPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+          <label htmlFor="req-message" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
             Message
           </label>
           <textarea
+            id="req-message"
             rows={4}
             value={message}
             onChange={(e) => setMessage(e.target.value)}

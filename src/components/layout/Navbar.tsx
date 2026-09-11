@@ -40,6 +40,9 @@ export default function Navbar() {
                 width={1305}
                 height={1206}
                 className="h-8 w-auto object-contain"
+                loading="eager"
+                priority
+                sizes="(max-width: 640px) 32px, 32px"
               />
               <span className="text-lg font-bold text-text-primary font-display tracking-tight hidden sm:block">
                 N.S Club
@@ -120,6 +123,7 @@ export default function Navbar() {
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="md:hidden p-1.5 rounded-lg hover:bg-surface-raised"
+                aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
               >
                 {mobileMenuOpen ? (
                   <X className="h-5 w-5 text-mist" />

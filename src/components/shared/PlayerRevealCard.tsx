@@ -242,6 +242,7 @@ export default function PlayerRevealCard({ player, statistics, onClose }: Player
                         <div className="flex items-center gap-2">
                           <button onClick={(e) => { e.stopPropagation(); handleClose(); }}
                             className="p-1.5 rounded-full bg-black/20 backdrop-blur-sm text-white/50 hover:text-white hover:bg-black/40 transition-colors"
+                            aria-label="Close player card"
                           >
                             <X className="h-3.5 w-3.5" />
                           </button>
@@ -262,6 +263,7 @@ export default function PlayerRevealCard({ player, statistics, onClose }: Player
                             className={cn("p-1.5 rounded-full backdrop-blur-sm transition-colors",
                               shareState === "copied" ? "bg-emerald-500/30 text-emerald-400" : "bg-black/20 text-white/50 hover:text-white hover:bg-black/40"
                             )}
+                            aria-label={shareState === "copied" ? "Link copied" : "Share player"}
                           >
                             {shareState === "copied" ? <Check className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />}
                           </button>
@@ -330,6 +332,7 @@ export default function PlayerRevealCard({ player, statistics, onClose }: Player
                         <div className="flex items-center gap-1.5 md:gap-2 min-w-0 flex-1">
                           <button onClick={(e) => { e.stopPropagation(); handleClose(); }}
                             className="p-1.5 rounded-full bg-black/20 backdrop-blur-sm text-white/50 hover:text-white hover:bg-black/40 transition-colors shrink-0"
+                            aria-label="Close player card"
                           >
                             <X className="h-3.5 w-3.5" />
                           </button>
@@ -349,6 +352,7 @@ export default function PlayerRevealCard({ player, statistics, onClose }: Player
                             className={cn("p-1.5 rounded-full backdrop-blur-sm transition-colors",
                               shareState === "copied" ? "bg-emerald-500/30 text-emerald-400" : "bg-black/20 text-white/50 hover:text-white hover:bg-black/40"
                             )}
+                            aria-label={shareState === "copied" ? "Link copied" : "Share player"}
                           >
                             {shareState === "copied" ? <Check className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />}
                           </button>

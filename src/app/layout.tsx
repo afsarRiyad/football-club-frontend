@@ -17,21 +17,28 @@ import {
   SITE_URL,
 } from "@/lib/seo";
 
+// Preload critical fonts to improve FCP
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+  display: 'swap',
+  preload: true,
 });
 
 const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700"],
+  display: 'swap',
+  preload: true,
 });
 
 const jetbrains = JetBrains_Mono({
   variable: "--font-jetbrains",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600"],
+  display: 'swap',
+  preload: true,
 });
 
 const googleVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
@@ -119,6 +126,11 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-background text-text-primary">
+        {/* Preconnect to critical origins */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Cloudinary only preconnected when needed - remove if not using */}
+        {/* <link rel="preconnect" href="https://res.cloudinary.com" /> */}
         {/* Site-wide structured data: club identity + website entity. */}
         <JsonLd data={[sportsClubSchema(), webSiteSchema()]} />
         <ThemeProvider>

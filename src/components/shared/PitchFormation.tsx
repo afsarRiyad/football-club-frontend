@@ -196,6 +196,7 @@ export default function PitchFormation({
                       width={56}
                       height={56}
                       className="w-full h-full object-cover"
+                      sizes="56px"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-club-primary">

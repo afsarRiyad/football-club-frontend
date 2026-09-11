@@ -1,15 +1,12 @@
 import type { Metadata } from "next";
 
-/* ────────────────────────────────────────────────────────────────────
-   Site-wide SEO configuration
-   ────────────────────────────────────────────────────────────────────
+/*Site-wide SEO configuration
    The canonical origin of the site — this is what every canonical tag,
    the sitemap, structured data and Open Graph URL resolve to.
 
    Pick ONE host and stick to it (currently the www host). The other host
    should 301-redirect here, so search engines never see duplicate sites.
-   Override with NEXT_PUBLIC_SITE_URL if the domain ever changes.
-   ──────────────────────────────────────────────────────────────────── */
+   Override with NEXT_PUBLIC_SITE_URL if the domain ever changes. */
 
 export const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL || "https://www.nayadiganta.club"
@@ -73,9 +70,7 @@ export const DEFAULT_OG_IMAGE = `${SITE_URL}/opengraph-image`;
 export const absoluteUrl = (path = "/") =>
   `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 
-/* ────────────────────────────────────────────────────────────────────
-   Page metadata builder
-   ──────────────────────────────────────────────────────────────────── */
+/* Page metadata builder*/
 
 export type PageMeta = {
   /** Page title. The root layout appends " | Nayadiganta Sporting Club". */
@@ -135,12 +130,9 @@ export function buildMetadata(meta: PageMeta): Metadata {
   };
 }
 
-/* ────────────────────────────────────────────────────────────────────
-   Server-side data fetching (metadata, sitemap, structured data)
-   ────────────────────────────────────────────────────────────────────
+/*   Server-side data fetching (metadata, sitemap, structured data)
    Never throws: a cold or unreachable API degrades to the fallback so a
-   build or a page render can always complete.
-   ──────────────────────────────────────────────────────────────────── */
+   build or a page render can always complete. */
 
 export async function serverFetch<T = any>(
   path: string,
@@ -150,7 +142,10 @@ export async function serverFetch<T = any>(
     const res = await fetch(`${API_URL}${path}`, {
       next: { revalidate },
       headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(8000),
+      /* Generous timeout: serverFetch also runs at build time, where a cold
+         API instance can take several seconds to wake. A short timeout here
+         means pages get prerendered with empty content. */
+      signal: AbortSignal.timeout(20000),
     });
     if (!res.ok) return null;
     return (await res.json()) as T;
