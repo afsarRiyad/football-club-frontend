@@ -36,25 +36,87 @@ export const CLUB = {
   countryCode: "BD",
   sport: "Association football",
   logo: "https://res.cloudinary.com/xjrgjslb/image/upload/v1788376645/fclub/1788376643695-77153592.jpg",
-  /* Add real profile URLs here (Facebook / Instagram / YouTube / X) — they power
-     the "sameAs" structured-data property that search engines use to verify the club. */
-  socials: [] as string[],
+  /* Official profiles — these power the "sameAs" structured-data property that
+     search engines use to confirm the site and the club are one entity, and they
+     render as the social row in the footer.
+
+     The Facebook URL below is the resolved target of the club's share link
+     (facebook.com/share/14iDUZXskt7 → profile.php?id=61566985887930); the
+     canonical form is used because share links are redirects. */
+  socials: [
+    "https://www.facebook.com/profile.php?id=61566985887930",
+  ] as string[],
 } as const;
 
-export const DEFAULT_TITLE = `${SITE_NAME} — Official Football Club Website`;
+/* ─── Location ───
+   Local searches are typed as "nayadiganta club", "nayadiganta bhuiyarhat",
+   "nayadiganta club noakhali" — so the locality belongs in the homepage title,
+   in visible copy and in the structured data, spelled the same way every time
+   (Google matches the entity, not the spelling you use in a meta tag). */
+export const CLUB_LOCALITY = `${CLUB.city}, ${CLUB.region}`;
+export const CLUB_FULL_LOCATION = `${CLUB.address}, ${CLUB.city}, ${CLUB.region}, ${CLUB.country}`;
+
+/**
+ * The club's Google Maps place, as shared by the club. Used for every
+ * "Open in Google Maps" link, in the footer, and as `hasMap` in the
+ * structured data. Resolving it gives the place name (ভূঁইয়ার হাট) and the
+ * pin at 22.8584232, 91.227936.
+ */
+export const CLUB_MAP_URL = "https://maps.app.goo.gl/bXDaysez5Qw9thgPA";
+
+/* ─── Contact details (NAP: name, address, phone) ───
+   Local rankings lean on this being byte-identical on the site, the Google
+   Business Profile and every social page. Fill these in and they are picked up
+   automatically by the footer and by the structured data — nothing here is
+   invented, so leave a field empty until it is real. */
+export const CONTACT = {
+  /** e.g. "+8801XXXXXXXXX" */
+  telephone: "",
+  /** e.g. "info@nayadiganta.club" */
+  email: "",
+  /** e.g. "3850" */
+  postalCode: "",
+  /** The club's pin, read from the Google Maps place the club shared. */
+  geo: { latitude: 22.8584232, longitude: 91.227936 } as {
+    latitude: number;
+    longitude: number;
+  } | null,
+  /** schema.org openingHours strings, e.g. "Mo-Su 15:00-18:00" */
+  openingHours: [] as string[],
+};
+
+/**
+ * Map embed for the contact page. Uses the exact pin when we have coordinates,
+ * otherwise falls back to the address, so it always points somewhere real.
+ * `maps.google.com/maps?...&output=embed` needs no API key.
+ */
+export const CLUB_MAP_EMBED_URL = CONTACT.geo
+  ? `https://maps.google.com/maps?q=${CONTACT.geo.latitude},${CONTACT.geo.longitude}&z=16&output=embed`
+  : `https://maps.google.com/maps?q=${encodeURIComponent(CLUB_FULL_LOCATION)}&z=15&output=embed`;
+
+export const DEFAULT_TITLE = `${SITE_NAME} — Football Club in ${CLUB_LOCALITY}`;
 export const DEFAULT_SHORT_TITLE = `${SITE_SHORT_NAME} | Football Club`;
 
 export const DEFAULT_DESCRIPTION =
   "The official website of Nayadiganta Sporting Club — a football club founded in 2025 at Bhuiyyarhat Chowrasta, Kabirhat, Noakhali, Bangladesh. Squad profiles, fixtures, live scores, results, league standings, news, gallery and youth academy.";
 
+/* Note: Google ignores the keywords meta tag — this list documents the phrases
+   the site is built around and is reused for per-page metadata. What actually
+   ranks is the same phrases appearing in titles, headings and body copy. */
 export const DEFAULT_KEYWORDS = [
   "Nayadiganta Sporting Club",
+  "Nayadiganta Club",
   "Nayadiganta SC",
   "Nayadiganta football club",
+  "Nayadiganta club Kabirhat",
+  "Nayadiganta club Noakhali",
+  "Nayadiganta club Bhuiyyarhat",
+  "Nayadiganta Sporting Club Bhuiyyarhat Chowrasta",
   "Kabirhat football club",
-  "Bhuiyyarhat Chowrasta",
   "Bhuiyyarhat football club",
-  "Noakhali football",
+  "Bhuiyyarhat Chowrasta",
+  "Noakhali football club",
+  "football club in Noakhali Bangladesh",
   "Bangladesh football club",
   "football club Bangladesh",
   "club fixtures and results",

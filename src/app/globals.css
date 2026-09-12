@@ -483,6 +483,36 @@ body {
   perspective: 1200px;
 }
 
+/* ═══════════════════════════════════════════
+   Hero entrance (page load)
+   ═══════════════════════════════════════════
+   Deliberately CSS rather than JS. The hero headline is the LCP element, and
+   hiding it behind a hydration-gated animation meant it was not painted until
+   the bundle ran — that is what pushed mobile LCP to ~5s. A CSS animation
+   starts on the first paint, so the heading is on screen right away while
+   still fading + rising in. */
+
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.hero-rise {
+  animation: hero-rise 450ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-rise {
+    animation: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

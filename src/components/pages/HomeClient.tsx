@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { motion } from "framer-motion";
+import { motion, useInView, useReducedMotion, useScroll, useTransform, type Variants } from "framer-motion";
 import {
   FiArrowRight,
   FiChevronRight,
@@ -26,7 +26,9 @@ import toast from "react-hot-toast";
 import { Match, News, Player, Club, Academy } from "@/types";
 import { Navbar, Footer } from "@/components/layout";
 import { Button } from "@/components/ui";
-import { cn } from "@/lib/utils";
+import { cn, CLUB_TIME_ZONE } from "@/lib/utils";
+import { CLUB_MAP_URL } from "@/lib/seo";
+
 
 // Lazy load heavy components that aren't needed immediately
 // This reduces initial bundle size and improves TBT
@@ -55,70 +57,114 @@ function getTeamName(team: any): string {
   return team?.name || "TBD";
 }
 function formatDate(d: string) {
-  return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return new Date(d).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: CLUB_TIME_ZONE,
+  });
 }
 
-/* ─── Animated counter (reduced motion friendly) ─── */
+/* ─── Animated counter — counts up once, the first time it scrolls into view ─── */
 function CountUp({ target, suffix = "" }: { target: number; suffix?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const [count, setCount] = useState(target); // Show final value immediately for SSR/perf
+  const inView = useInView(ref, { once: false, margin: "-50px" });
+  const prefersReducedMotion = useReducedMotion();
+
+  // The number ships in the server HTML at its final value, so crawlers never
+  // read a "0"; it then counts up from 0 every time the row comes back on screen.
+  const [count, setCount] = useState(target);
+
   useEffect(() => {
-    // Simple animation only when visible
+    if (!inView || prefersReducedMotion) return;
+    let frame = 0;
     let start = 0;
-    const duration = 1000; // Reduced from 1200ms
+    const duration = 800; // ~800ms ease-out, restarted on each pass
     const step = (ts: number) => {
       if (!start) start = ts;
-      const p = Math.min((ts - start) / duration, 1);
-      setCount(Math.floor(p * target));
-      if (p < 1) requestAnimationFrame(step);
+      const progress = Math.min((ts - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.round(eased * target));
+      if (progress < 1) frame = requestAnimationFrame(step);
     };
-    requestAnimationFrame(step);
-  }, [target]);
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [inView, prefersReducedMotion, target]);
+
   return <span ref={ref} className="font-mono tabular-nums">{count}{suffix}</span>;
 }
 
-/* ─── Reveal wrapper (using CSS for better performance) ─── */
+/* ─── Scroll reveal ───
+   Sections fade + rise into view and replay every time they re-enter the
+   viewport, so the page keeps moving on every scroll instead of animating once.
+   Deliberately gentle: ~500ms on a slow-out curve, and one smaller step of
+   travel. The copy still ships in the server HTML, so search engines read the
+   page without waiting for hydration. */
+const REVEAL_EASE = [0.25, 0.1, 0.25, 1] as [number, number, number, number];
+
+const revealVariant = (x: number, y: number): Variants => ({
+  hidden: { opacity: 0, x, y },
+  visible: { opacity: 1, x: 0, y: 0, transition: { duration: 0.5, ease: REVEAL_EASE } },
+});
+
+const REVEAL_VARIANTS: Record<"up" | "left" | "right", Variants> = {
+  up: revealVariant(0, 18),
+  left: revealVariant(-22, 0),
+  right: revealVariant(22, 0),
+};
+
+/* Reveal as soon as a section peeks in, and only hide it again once it has left
+   the screen completely. A stricter threshold (30% of the element) left tall
+   sections invisible on phones while they were still half on screen. */
+const REVEAL_VIEWPORT = { once: false, margin: "-80px", amount: "some" } as const;
+
 function Reveal({ children, className, direction = "up" }: {
   children: React.ReactNode;
   className?: string;
   direction?: "up" | "left" | "right";
 }) {
-  const dirClass = {
-    up: "animate-fade-in-up",
-    left: "animate-fade-in-left",
-    right: "animate-fade-in-right",
-  }[direction];
-  
+  const prefersReducedMotion = useReducedMotion();
+
+  // Reduced motion keeps the content, drops the travel.
+  if (prefersReducedMotion) return <div className={className}>{children}</div>;
+
   return (
-    <div className={`${dirClass} ${className || ''}`}>
+    <motion.div
+      variants={REVEAL_VARIANTS[direction]}
+      initial="hidden"
+      whileInView="visible"
+      viewport={REVEAL_VIEWPORT}
+      className={className}
+    >
       {children}
-    </div>
+    </motion.div>
   );
 }
 
-/* ─── Stagger (CSS-based) ─── */
+/* ─── Stagger — reveals direct children in sequence ───
+   Children stay `motion.div`s carrying the `itemVariant` below, so the
+   container's variant propagates the stagger to each item. */
 function Stagger({ children, className, delay = 0 }: {
   children: React.ReactNode;
   className?: string;
   delay?: number;
 }) {
-  return (
-    <div className={`stagger-container ${className || ''}`} style={{ '--stagger-delay': `${delay}s` } as React.CSSProperties}>
-      {children}
-    </div>
-  );
-}
+  const prefersReducedMotion = useReducedMotion();
 
-// Type for stagger item - using CSS animation instead of framer-motion
-function StaggerItem({ children, className, delay = 0 }: {
-  children: React.ReactNode;
-  className?: string;
-  delay?: number;
-}) {
+  if (prefersReducedMotion) return <div className={className}>{children}</div>;
+
   return (
-    <div className={`stagger-item animate-fade-in-up ${className || ''}`} style={{ animationDelay: `${delay}s` } as React.CSSProperties}>
+    <motion.div
+      variants={{
+        hidden: {},
+        visible: { transition: { staggerChildren: 0.08, delayChildren: delay } },
+      }}
+      initial="hidden"
+      whileInView="visible"
+      viewport={REVEAL_VIEWPORT}
+      className={className}
+    >
       {children}
-    </div>
+    </motion.div>
   );
 }
 
@@ -389,6 +435,21 @@ export default function HomeClient({ initialData }: { initialData: HomeData }) {
   const [loading, setLoading] = useState(needsClientFetch);
 
   const heroRef = useRef<HTMLDivElement>(null);
+  const prefersReducedMotion = useReducedMotion();
+
+  /* Hero motion as you scroll: the content drifts down while it fades out, so
+     the headline visibly loses contrast just before it leaves the viewport.
+     Scroll-linked transforms ignore prefers-reduced-motion, so they are turned
+     off explicitly. */
+  const { scrollYProgress: heroProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  /* Spread across the hero's whole exit rather than its first 70% — the shorter
+     range made the headline wash out almost immediately on phones. */
+  const heroY = useTransform(heroProgress, [0, 1], [0, 90]);
+  const heroOpacity = useTransform(heroProgress, [0.25, 1], [1, 0]);
+  const heroStyle = prefersReducedMotion ? undefined : { y: heroY, opacity: heroOpacity };
 
   useEffect(() => {
     if (!needsClientFetch) return;
@@ -420,8 +481,8 @@ export default function HomeClient({ initialData }: { initialData: HomeData }) {
 
   // Variants for staggered animation items
   const itemVariant = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" as const } },
+    hidden: { opacity: 0, y: 18 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: REVEAL_EASE } },
   };
 
   return (
@@ -446,12 +507,16 @@ export default function HomeClient({ initialData }: { initialData: HomeData }) {
               </div>
             </div>
           ) : (
-            <motion.div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
+            <motion.div style={heroStyle} className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
             <div className="max-w-2xl">
-              <motion.p initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }} className="text-pitch-accent font-mono text-sm mb-5 tracking-wider uppercase">
+              {/* Hero entrance is CSS, not framer-motion: `initial={{opacity:0}}`
+                  left the heading invisible in the server HTML until hydration,
+                  which pushed mobile LCP out to ~5s (it is the LCP element).
+                  A CSS animation starts on the first paint instead. */}
+              <p style={{ animationDelay: "0ms" }} className="hero-rise text-pitch-accent font-mono text-sm mb-5 tracking-wider uppercase">
                 {club?.name}
-              </motion.p>
-              <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }} className="text-5xl md:text-7xl lg:text-8xl font-bold text-floodlight font-display tracking-tight leading-[0.95]">
+              </p>
+              <h1 style={{ animationDelay: "0ms" }} className="hero-rise text-5xl md:text-7xl lg:text-8xl font-bold text-floodlight font-display tracking-tight leading-[0.95]">
                 {/* The visible hero line stays short, but the heading also carries
                     the full club name for crawlers and screen readers. It is not
                     hidden from users — sr-only text is exposed to assistive tech. */}
@@ -463,11 +528,11 @@ export default function HomeClient({ initialData }: { initialData: HomeData }) {
                 ) : (
                   <>Welcome to <span className="text-pitch-accent">Our Club</span></>
                 )}
-              </motion.h1>
-              <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }} className="text-mist text-lg mt-6 max-w-lg leading-relaxed">
+              </h1>
+              <p style={{ animationDelay: "90ms" }} className="hero-rise text-mist text-lg mt-6 max-w-lg leading-relaxed">
                 Squad, fixtures, news — everything about the club, all in one place.
-              </motion.p>
-              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.35 }} className="flex gap-3 mt-8">
+              </p>
+              <div style={{ animationDelay: "170ms" }} className="hero-rise flex gap-3 mt-8">
                 <Link href="/squad">
                   <Button size="lg" className="group">
                     Meet the Squad
@@ -477,7 +542,7 @@ export default function HomeClient({ initialData }: { initialData: HomeData }) {
                 <Link href="/matches">
                   <Button size="lg" variant="outline">Fixtures</Button>
                 </Link>
-              </motion.div>
+              </div>
             </div>
             </motion.div>
           )}
@@ -653,7 +718,10 @@ export default function HomeClient({ initialData }: { initialData: HomeData }) {
                     <Link href={`/squad/${p._id}`}>
                       <div className={cn("font-card group aspect-[3/4] bg-surface rounded-2xl border border-line/60 overflow-hidden relative transition-all duration-300 hover:shadow-[0_8px_30px_-8px_rgba(62,213,152,0.12)]", i === 0 && "md:col-span-2 md:row-span-2")}>
                         {p.photo ? (
-                          <Image src={p.photo} alt={`${p.firstName} ${p.lastName}`} fill className="object-cover group-hover:scale-[1.03] transition-transform duration-500" sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw" />
+                          /* These cards sit in a 3-column grid on phones and a 6-column grid
+                             from md up (the first one spans two of them), so the old `100vw`
+                             hint asked the optimizer for 640px photos in 111px slots. */
+                          <Image src={p.photo} alt={`${p.firstName} ${p.lastName}`} fill className="object-cover group-hover:scale-[1.03] transition-transform duration-500" sizes={i === 0 ? "33vw" : "(max-width: 767px) 33vw, 17vw"} />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-surface-raised">
                             <span className="text-4xl font-bold text-line font-display">{p.firstName?.charAt(0)}</span>
@@ -714,7 +782,7 @@ export default function HomeClient({ initialData }: { initialData: HomeData }) {
                 </ul>
                 <Link href="/academy">
                   <Button variant="outline" className="group">
-                    Learn More <FiArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    Explore the Academy <FiArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </Link>
               </Reveal>
@@ -764,6 +832,51 @@ export default function HomeClient({ initialData }: { initialData: HomeData }) {
               </Reveal>
             </section>
           )}
+          {/* ═══════════ WHERE WE PLAY ═══════════
+              Always rendered (unlike the About block above, which needs a club
+              description): local searches like "nayadiganta club kabirhat" are
+              matched against the town and district names on the page, so the
+              full address lives here in plain server-rendered HTML. */}
+          <section className="py-14 md:py-20 border-t border-line/50">
+            <div className="grid md:grid-cols-2 gap-8 md:gap-14 items-center">
+              <Reveal>
+                <span className="text-xs font-mono text-pitch-accent uppercase tracking-widest mb-3 block">Where We Play</span>
+                <h2 className="text-2xl md:text-3xl font-bold text-floodlight font-display mb-4">
+                  A football club in Kabirhat, Noakhali
+                </h2>
+                <p className="text-mist leading-relaxed">
+                  Nayadiganta Sporting Club is based at Bhuiyyarhat Chowrasta, Kabirhat,
+                  Noakhali. Training sessions and home fixtures take place at our ground
+                  there, and we welcome teams from across Noakhali and the wider
+                  Bangladesh football scene.
+                </p>
+              </Reveal>
+
+              <Reveal direction="right">
+                <div className="font-card bg-surface rounded-2xl border border-line/60 p-6">
+                  <p className="text-xs font-mono text-mist uppercase tracking-widest mb-2">Our Ground</p>
+                  <p className="text-lg font-bold text-floodlight font-display mb-1">Bhuiyyarhat Chowrasta</p>
+                  <p className="text-sm text-mist mb-5">Kabirhat, Noakhali, Bangladesh</p>
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                    <a
+                      href={CLUB_MAP_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-pitch-accent hover:underline inline-flex items-center gap-1"
+                    >
+                      Open in Google Maps <FiChevronRight className="h-3 w-3" />
+                    </a>
+                    <Link
+                      href="/contact"
+                      className="text-sm text-pitch-accent hover:underline inline-flex items-center gap-1"
+                    >
+                      Directions & contact <FiChevronRight className="h-3 w-3" />
+                    </Link>
+                  </div>
+                </div>
+              </Reveal>
+            </div>
+          </section>
         </div>
 
         {/* ═══════════ REQUEST A MATCH ═══════════ */}

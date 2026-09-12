@@ -1,4 +1,13 @@
-import { CLUB, SITE_NAME, SITE_URL, absoluteUrl, metaDescription } from "./seo";
+import {
+  CLUB,
+  CLUB_MAP_URL,
+  CONTACT,
+  DEFAULT_KEYWORDS,
+  SITE_NAME,
+  SITE_URL,
+  absoluteUrl,
+  metaDescription,
+} from "./seo";
 
 /* ────────────────────────────────────────────────────────────────────
    schema.org structured data (JSON-LD)
@@ -14,6 +23,7 @@ const postalAddress = {
   streetAddress: CLUB.address,
   addressLocality: CLUB.city,
   addressRegion: CLUB.region,
+  ...(CONTACT.postalCode ? { postalCode: CONTACT.postalCode } : {}),
   addressCountry: CLUB.countryCode,
 };
 
@@ -32,10 +42,40 @@ export function sportsClubSchema(): Json {
     logo: CLUB.logo,
     image: CLUB.logo,
     foundingDate: CLUB.founded,
+    foundingLocation: { "@type": "Place", name: fullLocationName, address: postalAddress },
     sport: CLUB.sport,
+    /* The phrases the club wants to be found for, attached to the entity. */
+    keywords: DEFAULT_KEYWORDS.join(", "),
     address: postalAddress,
     location: { "@type": "Place", name: fullLocationName, address: postalAddress },
-    areaServed: { "@type": "Country", name: "Bangladesh" },
+    hasMap: CLUB_MAP_URL,
+    /* Local queries resolve through areaServed, so name the town and district
+       as well as the country rather than only "Bangladesh". */
+    areaServed: [
+      { "@type": "City", name: CLUB.city },
+      { "@type": "AdministrativeArea", name: CLUB.region },
+      { "@type": "Country", name: CLUB.country },
+    ],
+    /* Everything below only appears once the real values are filled into
+       CONTACT — nothing is invented. */
+    ...(CONTACT.telephone ? { telephone: CONTACT.telephone } : {}),
+    ...(CONTACT.email ? { email: CONTACT.email } : {}),
+    ...(CONTACT.geo
+      ? { geo: { "@type": "GeoCoordinates", latitude: CONTACT.geo.latitude, longitude: CONTACT.geo.longitude } }
+      : {}),
+    ...(CONTACT.openingHours.length > 0 ? { openingHours: CONTACT.openingHours } : {}),
+    ...(CONTACT.telephone || CONTACT.email
+      ? {
+          contactPoint: {
+            "@type": "ContactPoint",
+            contactType: "customer service",
+            areaServed: CLUB.countryCode,
+            availableLanguage: ["en", "bn"],
+            ...(CONTACT.telephone ? { telephone: CONTACT.telephone } : {}),
+            ...(CONTACT.email ? { email: CONTACT.email } : {}),
+          },
+        }
+      : {}),
     ...(CLUB.socials.length > 0 ? { sameAs: CLUB.socials } : {}),
   };
 }

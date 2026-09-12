@@ -6,7 +6,7 @@ import api from "@/lib/api";
 import { Match } from "@/types";
 import Image from "next/image";
 import { PageSpinner, Pagination } from "@/components/ui";
-import { cn } from "@/lib/utils";
+import { cn, CLUB_TIME_ZONE } from "@/lib/utils";
 
 function getTeamName(team: any): string {
   if (typeof team === "string") return "TBD";
@@ -22,6 +22,7 @@ function formatDate(d: string) {
   return new Date(d).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
+    timeZone: CLUB_TIME_ZONE,
   });
 }
 
@@ -29,6 +30,7 @@ function formatTime(d: string) {
   return new Date(d).toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: CLUB_TIME_ZONE,
   });
 }
 

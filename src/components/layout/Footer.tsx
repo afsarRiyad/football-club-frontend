@@ -4,6 +4,16 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ExternalLink } from "lucide-react";
+import { CLUB, CLUB_FULL_LOCATION, CLUB_MAP_URL, CONTACT, SITE_NAME } from "@/lib/seo";
+
+/** Safe label for a social profile link — never throws on a malformed URL. */
+function socialLabel(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "social profile";
+  }
+}
 
 export default function Footer() {
   return (
@@ -26,19 +36,30 @@ export default function Footer() {
                 N.S Club
               </span>
             </Link>
+            {/* The footer shows on every page, so the club's name, town and
+                district live here rather than only on the About page. */}
             <p className="text-sm text-text-secondary/90">
-              Your complete football club management platform. Manage players,
-              matches, and more.
+              The official website of {SITE_NAME} — a football club based at
+              Bhuiyyarhat Chowrasta, Kabirhat, Noakhali, Bangladesh.
             </p>
-            <div className="flex items-center gap-4">
-              <a
-                href="#"
-                className="hover:text-pitch-accent transition-colors duration-150"
-                aria-label="External link"
-              >
-                <ExternalLink className="h-5 w-5" />
-              </a>
-            </div>
+            {/* Only rendered once CLUB.socials is filled in: a dead `href="#"`
+                link is worse for users and crawlers than no icon at all. */}
+            {CLUB.socials.length > 0 ? (
+              <div className="flex items-center gap-4">
+                {CLUB.socials.map((url) => (
+                  <a
+                    key={url}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${SITE_NAME} on ${socialLabel(url)}`}
+                    className="hover:text-pitch-accent transition-colors duration-150"
+                  >
+                    <ExternalLink className="h-5 w-5" />
+                  </a>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           {/* Quick Links */}
@@ -48,11 +69,12 @@ export default function Footer() {
             </h3>
             <ul className="space-y-2">
               <li>
+                {/* `/clubs` was a 404 on every page of the site. */}
                 <Link
-                  href="/clubs"
+                  href="/contact"
                   className="text-sm text-text-secondary hover:text-pitch-accent transition-colors duration-150"
                 >
-                  Browse Clubs
+                  Contact & Directions
                 </Link>
               </li>
               <li>
@@ -129,12 +151,51 @@ export default function Footer() {
                 <span className="text-sm text-text-secondary">Help Center</span>
               </li>
               <li>
-                <span className="text-sm text-text-secondary">Contact Us</span>
+                <Link
+                  href="/about"
+                  className="text-sm text-text-secondary hover:text-pitch-accent transition-colors duration-150"
+                >
+                  About & Contact
+                </Link>
               </li>
             </ul>
           </div>
-        </div>          <div className="border-t border-line mt-8 pt-8 text-center text-sm text-text-secondary/70">
-          <p>&copy; {new Date().getFullYear()} N.S Club. All rights reserved.</p>
+        </div>
+
+        {/* NAP block — the club's name, address and phone. These exact strings
+            are what local search matches against the club's Google Business
+            Profile, so keep them identical wherever they appear (here, the
+            structured data, Facebook, the profile itself). */}
+        <div className="border-t border-line mt-8 pt-8 text-center text-sm text-text-secondary/70">
+          <p className="mb-2">
+            <span className="text-text-secondary">{SITE_NAME}</span>
+            {" · "}
+            <a
+              href={CLUB_MAP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-pitch-accent transition-colors"
+            >
+              {CLUB_FULL_LOCATION}
+            </a>
+            {CONTACT.telephone ? (
+              <>
+                {" · "}
+                <a href={`tel:${CONTACT.telephone}`} className="hover:text-pitch-accent transition-colors">
+                  {CONTACT.telephone}
+                </a>
+              </>
+            ) : null}
+            {CONTACT.email ? (
+              <>
+                {" · "}
+                <a href={`mailto:${CONTACT.email}`} className="hover:text-pitch-accent transition-colors">
+                  {CONTACT.email}
+                </a>
+              </>
+            ) : null}
+          </p>
+          <p>&copy; {new Date().getFullYear()} {SITE_NAME}. All rights reserved.</p>
         </div>
       </div>
     </footer>

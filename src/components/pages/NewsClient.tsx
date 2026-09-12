@@ -6,7 +6,7 @@ import api from "@/lib/api";
 import { News } from "@/types";
 import Image from "next/image";
 import { PageSpinner, Pagination } from "@/components/ui";
-import { cn } from "@/lib/utils";
+import { cn, CLUB_TIME_ZONE } from "@/lib/utils";
 
 const categories = ["Transfer", "Match Report", "Interview", "Analysis", "Club News"];
 
@@ -15,6 +15,7 @@ function formatDate(d: string) {
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: CLUB_TIME_ZONE,
   });
 }
 

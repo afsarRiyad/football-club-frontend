@@ -6,11 +6,13 @@ import Image from "next/image";
 import api from "@/lib/api";
 import { Gallery } from "@/types";
 
-// Fallback images shown while loading or if no gallery data exists
+// Fallback images shown while loading or if no gallery data exists.
+// Every URL here must resolve — a dead one shows as a broken image and logs a
+// failed /_next/image request in the console.
 const FALLBACK_PHOTOS = [
   "https://images.unsplash.com/photo-1552667466-07770ae110d0?w=300",
   "https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=300",
-  "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=300",
+  "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=300",
   "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=300",
   "https://images.unsplash.com/photo-1614632537190-23e4146777db?w=300",
   "https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=300",

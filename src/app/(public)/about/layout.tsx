@@ -3,7 +3,9 @@ import JsonLd from "@/components/seo/json-ld";
 import { breadcrumbSchema, collectionPageSchema } from "@/lib/structured-data";
 import { buildMetadata } from "@/lib/seo";
 
-const TITLE = "About the Club — History, Mission & People";
+/* Leads with the location as well as the club: "about the club" alone competes
+   with every club in the world, "Kabirhat, Noakhali" is the part that is ours. */
+const TITLE = "About the Club — Kabirhat, Noakhali";
 const DESCRIPTION =
   "The story of Nayadiganta Sporting Club: founded in 2025 at Bhuiyyarhat Chowrasta, Kabirhat, Noakhali, Bangladesh. Our mission, values, home ground and the people who run the club.";
 const PATH = "/about";

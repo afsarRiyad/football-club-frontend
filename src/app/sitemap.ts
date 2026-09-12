@@ -19,6 +19,8 @@ const STATIC_ROUTES: { path: string; priority: number; changeFrequency: Metadata
   { path: "/standings", priority: 0.8, changeFrequency: "daily" },
   { path: "/competitions", priority: 0.7, changeFrequency: "weekly" },
   { path: "/about", priority: 0.6, changeFrequency: "monthly" },
+  /* Local searches for the club's address land here. */
+  { path: "/contact", priority: 0.7, changeFrequency: "monthly" },
   { path: "/academy", priority: 0.6, changeFrequency: "monthly" },
   { path: "/gallery", priority: 0.5, changeFrequency: "weekly" },
   { path: "/request-match", priority: 0.5, changeFrequency: "monthly" },

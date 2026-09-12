@@ -7,7 +7,7 @@ import Image from "next/image";
 import api from "@/lib/api";
 import { Competition, Match } from "@/types";
 import { PageSpinner } from "@/components/ui";
-import { cn } from "@/lib/utils";
+import { cn, CLUB_TIME_ZONE } from "@/lib/utils";
 
 const typeColors: Record<string, string> = {
   LEAGUE: "bg-blue-500/10 text-blue-400 border-blue-500/20",
@@ -606,7 +606,7 @@ export default function CompetitionsClient({
                               "bg-surface-raised/30 border-b border-line/20"
                             )}>
                               <span className="text-[10px] font-mono text-mist">
-                                {m.matchDate ? new Date(m.matchDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "TBD"}
+                                {m.matchDate ? new Date(m.matchDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: CLUB_TIME_ZONE }) : "TBD"}
                               </span>
                               {isLive ? (
                                 <span className="flex items-center gap-1 text-[10px] font-mono font-bold text-red-500">

@@ -145,7 +145,7 @@ export default function AcademyClient({
                       alt={`${player.firstName} ${player.lastName}`}
                       fill
                       className="object-cover animate-ken-burns"
-                      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+                      sizes="(max-width: 639px) 33vw, (max-width: 767px) 25vw, 17vw"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">

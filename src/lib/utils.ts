@@ -5,11 +5,19 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/* The club's local time zone. Dates render during SSR on a server that runs in
+   UTC, so formatting them in the server's own zone made the text disagree with
+   the visitor's browser — React reports that as a hydration mismatch (#418) and
+   regenerates the tree on the client. Pinning the zone also shows kick-offs at
+   the time the club actually means. */
+export const CLUB_TIME_ZONE = "Asia/Dhaka";
+
 export function formatDate(date: string | Date): string {
   return new Date(date).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
+    timeZone: CLUB_TIME_ZONE,
   });
 }
 
@@ -20,6 +28,7 @@ export function formatDateTime(date: string | Date): string {
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: CLUB_TIME_ZONE,
   });
 }
 

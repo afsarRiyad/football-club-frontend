@@ -7,7 +7,7 @@ import Image from "next/image";
 import api from "@/lib/api";
 import { Player, Statistic, StatisticType } from "@/types";
 import { PageSpinner } from "@/components/ui";
-import { cn } from "@/lib/utils";
+import { cn, CLUB_TIME_ZONE } from "@/lib/utils";
 
 const positionFull: Record<string, string> = {
   GOALKEEPER: "Goalkeeper",
@@ -363,6 +363,7 @@ export default function PlayerProfileClient({
                       month: "short",
                       day: "numeric",
                       year: "numeric",
+                      timeZone: CLUB_TIME_ZONE,
                     })}
                   </span>
                 </div>

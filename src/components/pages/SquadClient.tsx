@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import api from "@/lib/api";
 import { Player, Statistic, Team, Formation, Match, StartingXIEntry, MatchFormation } from "@/types";
-import { cn } from "@/lib/utils";
+import { cn, CLUB_TIME_ZONE } from "@/lib/utils";
 import PitchFormation from "@/components/shared/PitchFormation";
 import PlayerRevealCard from "@/components/shared/PlayerRevealCard";
 import { getFormation, FORMATION_OPTIONS } from "@/lib/formations";
@@ -69,16 +69,20 @@ function formatMatchDate(dateStr: string): string {
   const diffMs = date.getTime() - now.getTime();
   const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
+  /* Pinned to the club's time zone so the server-rendered text matches what the
+     visitor's browser computes (see CLUB_TIME_ZONE for why). */
   const formatted = date.toLocaleDateString("en-US", {
     weekday: "short",
     month: "short",
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: CLUB_TIME_ZONE,
   });
 
-  if (diffDays === 0) return `Today, ${date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`;
-  if (diffDays === 1) return `Tomorrow, ${date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}`;
+  const time = { hour: "2-digit", minute: "2-digit", timeZone: CLUB_TIME_ZONE } as const;
+  if (diffDays === 0) return `Today, ${date.toLocaleTimeString("en-US", time)}`;
+  if (diffDays === 1) return `Tomorrow, ${date.toLocaleTimeString("en-US", time)}`;
   if (diffDays <= 7) return `${formatted} (${diffDays}d)`;
   return formatted;
 }
@@ -874,7 +878,9 @@ export default function SquadClient({ initialData }: { initialData: SquadInitial
                     <span className="text-xs text-mist font-mono">{group.length}</span>
                   </div>
                   {/* Responsive vertical grid (no horizontal swipe) */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 md:gap-4">
+                  {/* Same column ladder as the extended-squad and skeleton grids,
+                      so a card is the same size in every view. */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
                     {group.map((player, i) => (
                       <motion.div
                         key={player._id}
@@ -1013,16 +1019,19 @@ function PlayerGridCard({
   return (
     <button
       onClick={onClick}
-      className="group bg-surface rounded-xl overflow-hidden transition-all duration-200 hover:bg-surface-raised border border-line/30 text-left"
+      className="group flex flex-col w-full h-full bg-surface rounded-xl overflow-hidden transition-all duration-200 hover:bg-surface-raised border border-line/30 text-left"
     >
-      <div className="relative aspect-[3/4] bg-surface-raised overflow-hidden">
+      {/* The card has to fill its grid cell: a plain inline-block button
+          shrink-wraps to the player's name, which made every card a different
+          width (and, through the 3:4 frame, a different height too). */}
+      <div className="relative aspect-[3/4] w-full shrink-0 bg-surface-raised overflow-hidden">
         {player.photo ? (
           <Image
             src={player.photo}
             alt={getPlayerName(player)}
             fill
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            sizes="(max-width: 640px) 50vw, 33vw"
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
