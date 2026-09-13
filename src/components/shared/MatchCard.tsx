@@ -13,14 +13,17 @@ interface MatchCardProps {
   match: Match;
 }
 
-function getTeamName(team: string | Team | null): string {
-  if (!team || typeof team === "string") return "TBD";
-  return team.name || "TBD";
+/* `fallback` carries the free-text opponent name for one-off fixtures that were
+   not created against a Team document. */
+function getTeamName(team: string | Team | null | undefined, fallback?: string): string {
+  if (team && typeof team === "object" && team.name) return team.name;
+  if (typeof fallback === "string" && fallback.trim()) return fallback;
+  return "TBD";
 }
 
 export default function MatchCard({ match }: MatchCardProps) {
   const homeTeam = getTeamName(match.homeTeam);
-  const awayTeam = getTeamName(match.awayTeam);
+  const awayTeam = getTeamName(match.awayTeam, match.awayTeamName);
 
   const statusVariant = {
     SCHEDULED: "default" as const,

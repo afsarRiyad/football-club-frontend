@@ -12,7 +12,7 @@ import GalleryClient, { type GalleryInitialData } from "@/components/pages/Galle
    Mirrors the params the client uses: page=1, limit=9.
    ──────────────────────────────────────────────────────────────────── */
 
-export const revalidate = 3600;
+export const revalidate = 60; /* Content window — see CONTENT_REVALIDATE in lib/seo.ts */
 
 type ListResponse<T> = { data?: T[]; totalPages?: number };
 

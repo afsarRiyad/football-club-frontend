@@ -6,9 +6,11 @@ import { Radio } from "lucide-react";
 import api from "@/lib/api";
 import { Match, Team } from "@/types";
 
-function getTeamName(team: string | Team | null): string {
-  if (!team || typeof team === "string") return "TBD";
-  return team.name || "TBD";
+/* `fallback` carries the free-text opponent name for one-off fixtures. */
+function getTeamName(team: string | Team | null | undefined, fallback?: string): string {
+  if (team && typeof team === "object" && team.name) return team.name;
+  if (typeof fallback === "string" && fallback.trim()) return fallback;
+  return "TBD";
 }
 
 export default function LiveMatchStrip() {
@@ -79,7 +81,7 @@ export default function LiveMatchStrip() {
                     {match.score.away}
                   </span>
                   <span className="text-xs text-mist truncate max-w-[80px]">
-                    {getTeamName(match.awayTeam)}
+                    {getTeamName(match.awayTeam, match.awayTeamName)}
                   </span>
                   {isLive && (
                     <span className="text-[10px] font-mono text-pitch-accent font-medium">

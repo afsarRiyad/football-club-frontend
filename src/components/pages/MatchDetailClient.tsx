@@ -11,12 +11,15 @@ import { formatDateTime } from "@/lib/utils";
 import { getSocket, connectSocket, disconnectSocket } from "@/lib/socket";
 import { cn } from "@/lib/utils";
 
-function getTeamName(team: string | Team): string {
-  if (typeof team === "string") return "TBD";
-  return team?.name || "TBD";
+/* `fallback` is the free-text opponent name used by one-off fixtures that were
+   not created against a Team document. */
+function getTeamName(team: string | Team | null | undefined, fallback?: string): string {
+  if (team && typeof team === "object" && (team as Team).name) return (team as Team).name;
+  if (typeof fallback === "string" && fallback.trim()) return fallback;
+  return "TBD";
 }
 
-function getTeamLogo(team: string | Team): string {
+function getTeamLogo(team: string | Team | null | undefined): string {
   if (!team || typeof team === "string") return "";
   return (team as any).logo || "";
 }
@@ -84,6 +87,11 @@ export default function MatchDetailClient({
     socket.on("match:statusChange", (data) => {
       setMatch((prev) => prev ? { ...prev, status: data.status } : prev);
     });
+    /* Statistics are edited from the admin's live panel; without this they only
+       appeared the next time the page was regenerated. */
+    socket.on("match:statsUpdate", (data) => {
+      setMatch((prev) => prev ? { ...prev, stats: data.stats } as Match : prev);
+    });
     socket.on("match:viewerCount", (count) => setViewers(count));
     socket.on("match:chatMessage", (data) => setChatMessages((prev) => [...prev, data]));
 
@@ -92,6 +100,7 @@ export default function MatchDetailClient({
       socket.off("match:scoreUpdate");
       socket.off("match:newEvent");
       socket.off("match:statusChange");
+      socket.off("match:statsUpdate");
       socket.off("match:viewerCount");
       socket.off("match:chatMessage");
       disconnectSocket();
@@ -127,7 +136,7 @@ export default function MatchDetailClient({
   }
 
   const homeName = getTeamName(match.homeTeam);
-  const awayName = getTeamName(match.awayTeam);
+  const awayName = getTeamName(match.awayTeam, match.awayTeamName);
   const homeLogo = getTeamLogo(match.homeTeam);
   const awayLogo = getTeamLogo(match.awayTeam);
   const isLive = match.status === "LIVE" || match.status === "HT";

@@ -12,7 +12,7 @@ import PlayerProfileClient from "@/components/pages/PlayerProfileClient";
    Expects the same endpoints the client used: the player plus statistics.
    ──────────────────────────────────────────────────────────────────── */
 
-export const revalidate = 3600;
+export const revalidate = 60; /* Content window — see CONTENT_REVALIDATE in lib/seo.ts */
 
 /* The API returns either { data: { player } } or { data: player }. */
 type PlayerPayload = { player?: Player } & Partial<Player>;

@@ -4,13 +4,16 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
 import { Match } from "@/types";
+import type { TournamentFixture } from "@/lib/tournament-fixtures";
 import Image from "next/image";
 import { PageSpinner, Pagination } from "@/components/ui";
 import { cn, CLUB_TIME_ZONE } from "@/lib/utils";
 
-function getTeamName(team: any): string {
-  if (typeof team === "string") return "TBD";
-  return team?.name || "TBD";
+/* `fallback` carries the free-text opponent name for one-off fixtures. */
+function getTeamName(team: any, fallback?: string): string {
+  if (team && typeof team === "object" && team.name) return team.name;
+  if (typeof fallback === "string" && fallback.trim()) return fallback;
+  return "TBD";
 }
 
 function getTeamLogo(team: any): string {
@@ -148,6 +151,10 @@ function getTeamEvents(events: any[]): MatchEventDisplay[] {
 export type MatchesInitialData = {
   matches: Match[];
   totalPages: number;
+  /* Upcoming fixtures from the club's tournaments. They are not in the matches
+     collection, so they are listed separately — and they link to the competition
+     rather than to a match page that doesn't exist. */
+  tournamentFixtures?: TournamentFixture[];
 };
 
 export default function MatchesClient({ initialData }: { initialData: MatchesInitialData }) {
@@ -160,6 +167,13 @@ export default function MatchesClient({ initialData }: { initialData: MatchesIni
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(initialData.totalPages);
+
+  /* Tournament fixtures only belong on the first page of the unfiltered or
+     upcoming view — paging is a property of the matches collection, not of them. */
+  const tournamentFixtures =
+    page === 1 && (status === "" || status === "SCHEDULED")
+      ? initialData.tournamentFixtures ?? []
+      : [];
 
   const firstRun = useRef(true);
   useEffect(() => {
@@ -221,6 +235,46 @@ export default function MatchesClient({ initialData }: { initialData: MatchesIni
         </div>
       ) : (
         <>
+          {tournamentFixtures.length > 0 && (
+            <div className="mb-10">
+              <p className="text-[10px] font-mono uppercase tracking-widest text-text-secondary mb-3">
+                Tournament fixtures
+              </p>
+              <div className="space-y-px">
+                {tournamentFixtures.map((m) => (
+                  <Link
+                    key={m._id}
+                    href="/competitions"
+                    className="block py-4 px-4 hover:bg-surface rounded-xl transition-colors group border-b border-line/20 last:border-0"
+                  >
+                    <div className="flex items-center justify-between gap-3 text-[10px] text-mist font-mono mb-2">
+                      <span>{formatDate(m.matchDate)} · {formatTime(m.matchDate)}</span>
+                      <span className="truncate">
+                        {m.tournamentName}{m.round ? ` · ${m.round.replace(/_/g, " ")}` : ""}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1 text-right">
+                        <span className="text-sm md:text-base font-semibold text-floodlight group-hover:text-pitch-accent transition-colors">
+                          {getTeamName(m.homeTeam)}
+                        </span>
+                      </div>
+                      <span className="text-sm font-mono text-mist px-3 shrink-0">vs</span>
+                      <div className="flex-1 text-left">
+                        <span className="text-sm md:text-base font-semibold text-floodlight group-hover:text-pitch-accent transition-colors">
+                          {getTeamName(m.awayTeam, m.awayTeamName)}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              <p className="text-[10px] text-mist mt-2">
+                Dates and results for these come from the tournament bracket — open Competitions to see it.
+              </p>
+            </div>
+          )}
+
           <div className="space-y-px">
             {matches.map((match) => {
               const isLive = match.status === "LIVE" || match.status === "HT";
@@ -298,10 +352,10 @@ export default function MatchesClient({ initialData }: { initialData: MatchesIni
                     <div className="flex-1 text-left">
                       <div className="flex items-center gap-2">
                         {awayLogo && (
-                          <Image src={awayLogo} alt={`${getTeamName(match.awayTeam)} logo`} width={24} height={24} className="w-6 h-6 rounded-full object-contain border border-line/30 shrink-0" />
+                          <Image src={awayLogo} alt={`${getTeamName(match.awayTeam, match.awayTeamName)} logo`} width={24} height={24} className="w-6 h-6 rounded-full object-contain border border-line/30 shrink-0" />
                         )}
                         <span className="text-sm md:text-base font-semibold text-floodlight group-hover:text-pitch-accent transition-colors truncate">
-                          {getTeamName(match.awayTeam)}
+                          {getTeamName(match.awayTeam, match.awayTeamName)}
                         </span>
                       </div>
                     </div>

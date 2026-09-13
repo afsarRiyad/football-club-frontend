@@ -88,9 +88,11 @@ function formatMatchDate(dateStr: string): string {
 }
 
 /* ── Get team name from match ── */
-function getTeamName(team: string | Team | null): string {
-  if (!team || typeof team === "string") return "TBD";
-  return team.name || "TBD";
+/* `fallback` carries the free-text opponent name for one-off fixtures. */
+function getTeamName(team: string | Team | null | undefined, fallback?: string): string {
+  if (team && typeof team === "object" && team.name) return team.name;
+  if (typeof fallback === "string" && fallback.trim()) return fallback;
+  return "TBD";
 }
 
 /* ── Loading skeleton (shown while the page fetches real squad data) ── */
@@ -615,7 +617,7 @@ export default function SquadClient({ initialData }: { initialData: SquadInitial
 
                     <div className="text-left flex-1">
                       <p className="text-lg md:text-xl font-bold text-floodlight font-display">
-                        {getTeamName(nextMatch.awayTeam)}
+                        {getTeamName(nextMatch.awayTeam, nextMatch.awayTeamName)}
                       </p>
                       <p className="text-xs text-mist font-mono">AWAY</p>
                     </div>

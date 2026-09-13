@@ -13,7 +13,7 @@ import MatchDetailClient from "@/components/pages/MatchDetailClient";
    MatchDetailClient.
    ──────────────────────────────────────────────────────────────────── */
 
-export const revalidate = 3600;
+export const revalidate = 60; /* Content window — see CONTENT_REVALIDATE in lib/seo.ts */
 
 /* The API returns either { data: { match } } or { data: match }. */
 type MatchPayload = { match?: Match } & Partial<Match>;

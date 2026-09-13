@@ -12,7 +12,7 @@ import StandingsClient from "@/components/pages/StandingsClient";
    Expects the same endpoints the client used.
    ──────────────────────────────────────────────────────────────────── */
 
-export const revalidate = 3600;
+export const revalidate = 60; /* Content window — see CONTENT_REVALIDATE in lib/seo.ts */
 
 type ListResponse<T> = { data?: T[] };
 

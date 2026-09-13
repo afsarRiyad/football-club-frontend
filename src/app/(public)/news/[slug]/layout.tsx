@@ -12,6 +12,8 @@ type Article = {
   content?: string;
   cover?: string;
   category?: string;
+  /* Drafts are reachable by URL for previewing, but must never be indexed. */
+  isPublished?: boolean;
   publishedAt?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -50,6 +52,7 @@ export async function generateMetadata({ params }: RouteParams): Promise<Metadat
     path: `/news/${article.slug}`,
     images: [article.cover],
     type: "article",
+    noindex: article.isPublished === false,
     publishedTime: article.publishedAt || article.createdAt,
     modifiedTime: article.updatedAt,
     authors: article.author?.name ? [article.author.name] : undefined,

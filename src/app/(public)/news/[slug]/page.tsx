@@ -13,7 +13,7 @@ import NewsArticleClient from "@/components/pages/NewsArticleClient";
    cause a second network call.
    ──────────────────────────────────────────────────────────────────── */
 
-export const revalidate = 3600;
+export const revalidate = 60; /* Content window — see CONTENT_REVALIDATE in lib/seo.ts */
 
 /* The API returns either { data: { article } } or { data: article }. */
 type ArticlePayload = { article?: News } & Partial<News>;

@@ -13,7 +13,7 @@ import CompetitionsClient, {
    Both endpoints are requested with the same limit the client used.
    ──────────────────────────────────────────────────────────────────── */
 
-export const revalidate = 3600;
+export const revalidate = 60; /* Content window — see CONTENT_REVALIDATE in lib/seo.ts */
 
 type ListResponse<T> = { data?: T[] };
 

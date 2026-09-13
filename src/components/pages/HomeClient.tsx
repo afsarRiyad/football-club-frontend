@@ -24,6 +24,7 @@ import { Trophy, Loader2 } from "lucide-react";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
 import { Match, News, Player, Club, Academy, Gallery } from "@/types";
+import { fixtureHref, type SiteFixture } from "@/lib/tournament-fixtures";
 import { Navbar, Footer } from "@/components/layout";
 import { Button } from "@/components/ui";
 import { cn, CLUB_TIME_ZONE } from "@/lib/utils";
@@ -46,7 +47,9 @@ const InfinitePhotoMarquee = dynamic(
 export type HomeData = {
   club: Club | null;
   news: News[];
-  matches: Match[];
+  /* Real matches plus upcoming tournament fixtures, merged and sorted by date in
+     src/app/page.tsx. */
+  matches: SiteFixture[];
   players: Player[];
   academies: Academy[];
   /** Gallery documents for the photo marquee — fetched server-side so the
@@ -55,9 +58,12 @@ export type HomeData = {
 };
 
 /* ─── Helpers ─── */
-function getTeamName(team: any): string {
-  if (typeof team === "string") return "TBD";
-  return team?.name || "TBD";
+/* `fallback` carries a free-text opponent name for fixtures whose away team was
+   typed in the admin instead of picked from the club's teams. */
+function getTeamName(team: any, fallback?: string): string {
+  if (team && typeof team === "object" && team.name) return team.name;
+  if (typeof fallback === "string" && fallback.trim()) return fallback;
+  return "TBD";
 }
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString("en-US", {
@@ -421,7 +427,7 @@ function RequestMatchForm({ club }: { club: Club | null }) {
 export default function HomeClient({ initialData }: { initialData: HomeData }) {
   const [club, setClub] = useState<Club | null>(initialData.club);
   const [news, setNews] = useState<News[]>(initialData.news);
-  const [matches, setMatches] = useState<Match[]>(initialData.matches);
+  const [matches, setMatches] = useState<SiteFixture[]>(initialData.matches);
   const [players, setPlayers] = useState<Player[]>(initialData.players);
   const [academies, setAcademies] = useState<Academy[]>(initialData.academies);
 
@@ -462,20 +468,26 @@ export default function HomeClient({ initialData }: { initialData: HomeData }) {
   const fetchData = async () => {
     try {
       // Use Promise.allSettled for resilience - don't block on single failures
+      /* Mirrors the server fetch in app/page.tsx: results and fixtures are
+         requested separately so a busy fixture list cannot crowd the finished
+         matches out of a single "latest matches" query. */
       const results = await Promise.allSettled([
         api.get("/clubs", { params: { limit: 1 } }),
         api.get("/news", { params: { limit: 5, sort: "-createdAt" } }),
-        api.get("/matches", { params: { limit: 8, sort: "-matchDate" } }),
+        api.get("/matches", { params: { status: "FT,LIVE,HT", limit: 4, sort: "-matchDate" } }),
+        api.get("/matches", { params: { status: "SCHEDULED", limit: 4, sort: "matchDate" } }),
         api.get("/players", { params: { limit: 8 } }),
         api.get("/academy", { params: { limit: 6 } }),
       ]);
-      
+
       if (results[0].status === "fulfilled" && results[0].value.data.data.length > 0)
         setClub(results[0].value.data.data[0]);
       if (results[1].status === "fulfilled") setNews(results[1].value.data.data || []);
-      if (results[2].status === "fulfilled") setMatches(results[2].value.data.data || []);
-      if (results[3].status === "fulfilled") setPlayers(results[3].value.data.data || []);
-      if (results[4].status === "fulfilled") setAcademies(results[4].value.data.data || []);
+      const finished = results[2].status === "fulfilled" ? results[2].value.data.data || [] : [];
+      const scheduled = results[3].status === "fulfilled" ? results[3].value.data.data || [] : [];
+      if (finished.length > 0 || scheduled.length > 0) setMatches([...finished, ...scheduled]);
+      if (results[4].status === "fulfilled") setPlayers(results[4].value.data.data || []);
+      if (results[5].status === "fulfilled") setAcademies(results[5].value.data.data || []);
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };
 
@@ -555,11 +567,18 @@ export default function HomeClient({ initialData }: { initialData: HomeData }) {
                 <span className="h-4 w-px bg-line shrink-0" />
                 {upcoming.slice(0, 3).map((m) => (
                   <div key={m._id}>
-                    <Link href={`/matches/${m._id}`} className="font-card flex items-center gap-4 px-4 py-2 rounded-xl hover:bg-surface-raised transition-colors shrink-0">
+                    <Link href={fixtureHref(m)} className="font-card flex items-center gap-4 px-4 py-2 rounded-xl hover:bg-surface-raised transition-colors shrink-0">
                       <span className="text-xs text-text-secondary font-mono">{formatDate(m.matchDate)}</span>
                       <span className="text-sm text-floodlight font-medium">{getTeamName(m.homeTeam)}</span>
                       <span className="text-sm font-mono font-bold text-pitch-accent">vs</span>
-                      <span className="text-sm text-floodlight font-medium">{getTeamName(m.awayTeam)}</span>
+                      <span className="text-sm text-floodlight font-medium">{getTeamName(m.awayTeam, m.awayTeamName)}</span>
+                      {/* A tournament fixture has no match page of its own — name the
+                          competition instead of pretending otherwise. */}
+                      {m._source === "tournament" && (
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-text-secondary px-2 py-0.5 rounded-full bg-pitch-night/60 shrink-0">
+                          {m.tournamentName || "Tournament"}
+                        </span>
+                      )}
                     </Link>
                   </div>
                 ))}
@@ -675,7 +694,7 @@ export default function HomeClient({ initialData }: { initialData: HomeData }) {
                         {m.score.home}<span className="text-mist mx-1">–</span>{m.score.away}
                       </span>
                       <div className="flex items-center gap-6 flex-1 justify-end">
-                        <span className="text-sm text-floodlight group-hover:text-pitch-accent transition-colors">{getTeamName(m.awayTeam)}</span>
+                        <span className="text-sm text-floodlight group-hover:text-pitch-accent transition-colors">{getTeamName(m.awayTeam, m.awayTeamName)}</span>
                         <span className={cn("text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded", m.status === "LIVE" ? "text-alert-red bg-alert-red/10" : "text-mist")}>
                           {m.status === "FT" ? "FT" : m.status}
                         </span>

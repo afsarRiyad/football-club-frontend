@@ -23,6 +23,8 @@ function formatDate(d: string) {
 export type NewsInitialData = {
   articles: News[];
   totalPages: number;
+  /** The article the editor marked Featured — the big hero slot. Published only. */
+  featured: News | null;
 };
 
 export default function NewsClient({ initialData }: { initialData: NewsInitialData }) {
@@ -31,6 +33,7 @@ export default function NewsClient({ initialData }: { initialData: NewsInitialDa
   const serverHadNothing = initialData.articles.length === 0;
 
   const [articles, setArticles] = useState<News[]>(initialData.articles);
+  const [featured, setFeatured] = useState<News | null>(initialData.featured);
   const [loading, setLoading] = useState(serverHadNothing);
   const [category, setCategory] = useState("");
   const [page, setPage] = useState(1);
@@ -61,6 +64,21 @@ export default function NewsClient({ initialData }: { initialData: NewsInitialDa
       setLoading(false);
     }
   };
+
+  /* The hero slot holds the article marked Featured in the admin, and falls back
+     to the newest story when nothing is featured. It is only used on the
+     unfiltered first page: once the reader picks a category or pages forward they
+     are browsing a result set, and promoting an article outside it would be
+     confusing. */
+  const onDefaultView = category === "" && page === 1;
+  const hero: News | null = (onDefaultView ? featured : null) ?? articles[0] ?? null;
+  const rest = articles.filter((article) => article._id !== hero?._id);
+
+  /* The hero card is paired with the next three articles as a side column. Both
+     the grid and the image box are laid out around that pairing, so with a
+     single article the side column is empty and the pairing has to collapse to
+     one column instead of leaving a dead half-row. */
+  const hasSideColumn = rest.length > 0;
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
@@ -108,44 +126,68 @@ export default function NewsClient({ initialData }: { initialData: NewsInitialDa
       ) : (
         <>
           {/* Editorial layout — first article large, rest in grid */}
-          <div className="grid md:grid-cols-2 gap-4 mb-8">
-            {articles[0] && (
-              <Link href={`/news/${articles[0].slug}`} className="group md:row-span-2">
-                <div className="relative aspect-[4/3] md:aspect-auto md:h-full bg-surface rounded-xl overflow-hidden">
-                  {articles[0].cover ? (
+          <div className={cn("grid gap-4 mb-8", hasSideColumn && "md:grid-cols-2")}>
+            {hero && (
+              <Link
+                href={`/news/${hero.slug}`}
+                className={cn("group", hasSideColumn && "md:row-span-2")}
+              >
+                {/* This box only ever contains absolutely positioned children, so
+                    it gets its height from CSS alone. `md:aspect-auto md:h-full`
+                    measured 0px tall on desktop: with an empty side column the
+                    grid row had no content to size it, so the cover image
+                    disappeared. The aspect ratio therefore stays definite, and
+                    `md:h-full` only stretches it once a side column exists to
+                    give the row a height. */}
+                <div
+                  className={cn(
+                    "relative bg-surface rounded-xl overflow-hidden aspect-[4/3]",
+                    hasSideColumn
+                      ? "md:h-full md:min-h-[360px]"
+                      : "md:aspect-[16/9]"
+                  )}
+                >
+                  {hero.cover ? (
                     <Image
-                      src={articles[0].cover}
-                      alt={articles[0].title}
+                      src={hero.cover}
+                      alt={hero.title}
                       fill
                       className="object-cover group-hover:scale-[1.03] transition-transform duration-500"
-                      sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 50vw"
+                      /* Matches the real slot: full width when the featured card
+                         spans the row, half of the 5xl container when the side
+                         column is present. */
+                      sizes={
+                        hasSideColumn
+                          ? "(max-width: 767px) 100vw, (max-width: 1024px) 50vw, 512px"
+                          : "(max-width: 1024px) 100vw, 1024px"
+                      }
                     />
                   ) : (
                     <div className="w-full h-full bg-surface-raised flex items-center justify-center">
                       <span className="text-5xl font-bold text-line font-display">
-                        {articles[0].title.charAt(0)}
+                        {hero.title.charAt(0)}
                       </span>
                     </div>
                   )}
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-pitch-night via-pitch-night/60 to-transparent p-6">
-                    {articles[0].category && (
+                    {hero.category && (
                       <span className="text-xs font-mono text-pitch-accent mb-2 block">
-                        {articles[0].category}
+                        {hero.category}
                       </span>
                     )}
                     <h2 className="text-xl md:text-2xl font-bold text-floodlight font-display leading-tight">
-                      {articles[0].title}
+                      {hero.title}
                     </h2>
                     <p className="text-xs text-mist mt-2 font-mono">
-                      {formatDate(articles[0].createdAt)}
+                      {formatDate(hero.createdAt)}
                     </p>
                   </div>
                 </div>
               </Link>
             )}
 
-            <div className="space-y-4">
-              {articles.slice(1, 4).map((article) => (
+            <div className={cn("space-y-4", !hasSideColumn && "hidden")}>
+              {rest.slice(0, 3).map((article) => (
                 <Link
                   key={article._id}
                   href={`/news/${article.slug}`}
@@ -181,10 +223,9 @@ export default function NewsClient({ initialData }: { initialData: NewsInitialDa
             </div>
           </div>
 
-          {/* Remaining articles — simple list */}
-          {articles.length > 4 && (
-            <div className="space-y-px mt-8">
-              {articles.slice(4).map((article) => (
+          {/* Remaining articles — simple list */}            {rest.length > 3 && (
+              <div className="space-y-px mt-8">
+                {rest.slice(3).map((article) => (
                 <Link
                   key={article._id}
                   href={`/news/${article.slug}`}

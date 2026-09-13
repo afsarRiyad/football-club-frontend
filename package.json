@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "check:layout": "node scripts/check-layout.mjs",
+    "check:perf": "node scripts/check-perf.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

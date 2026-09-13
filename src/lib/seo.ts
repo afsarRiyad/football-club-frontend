@@ -1,12 +1,6 @@
 import type { Metadata } from "next";
 
-/*Site-wide SEO configuration
-   The canonical origin of the site — this is what every canonical tag,
-   the sitemap, structured data and Open Graph URL resolve to.
-
-   Pick ONE host and stick to it (currently the www host). The other host
-   should 301-redirect here, so search engines never see duplicate sites.
-   Override with NEXT_PUBLIC_SITE_URL if the domain ever changes. */
+/*Site-wide SEO configuration */
 
 export const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL || "https://www.nayadiganta.club"
@@ -36,52 +30,27 @@ export const CLUB = {
   countryCode: "BD",
   sport: "Association football",
   logo: "https://res.cloudinary.com/xjrgjslb/image/upload/v1788376645/fclub/1788376643695-77153592.jpg",
-  /* Official profiles — these power the "sameAs" structured-data property that
-     search engines use to confirm the site and the club are one entity, and they
-     render as the social row in the footer.
-
-     The Facebook URL below is the resolved target of the club's share link
-     (facebook.com/share/14iDUZXskt7 → profile.php?id=61566985887930); the
-     canonical form is used because share links are redirects. */
+  /* Official profiles — . */
   socials: [
     "https://www.facebook.com/profile.php?id=61566985887930",
   ] as string[],
 } as const;
 
-/* ─── Location ───
-   Local searches are typed as "nayadiganta club", "nayadiganta bhuiyarhat",
-   "nayadiganta club noakhali" — so the locality belongs in the homepage title,
-   in visible copy and in the structured data, spelled the same way every time
-   (Google matches the entity, not the spelling you use in a meta tag). */
+/* ─── Location ───. */
 export const CLUB_LOCALITY = `${CLUB.city}, ${CLUB.region}`;
 export const CLUB_FULL_LOCATION = `${CLUB.address}, ${CLUB.city}, ${CLUB.region}, ${CLUB.country}`;
 
-/**
- * The club's Google Maps place, as shared by the club. Used for every
- * "Open in Google Maps" link, in the footer, and as `hasMap` in the
- * structured data. Resolving it gives the place name (ভূঁইয়ার হাট) and the
- * pin at 22.8584232, 91.227936.
- */
 export const CLUB_MAP_URL = "https://maps.app.goo.gl/bXDaysez5Qw9thgPA";
 
-/* ─── Contact details (NAP: name, address, phone) ───
-   Local rankings lean on this being byte-identical on the site, the Google
-   Business Profile and every social page. Fill these in and they are picked up
-   automatically by the footer and by the structured data — nothing here is
-   invented, so leave a field empty until it is real. */
+/* ─── Contact details (NAP: name, address, phone) ─── */
 export const CONTACT = {
-  /** e.g. "+8801XXXXXXXXX" */
   telephone: "",
-  /** e.g. "info@nayadiganta.club" */
   email: "",
-  /** Bhuiyarhat, Kabirhat. */
   postalCode: "3800",
-  /** The club's pin, read from the Google Maps place the club shared. */
   geo: { latitude: 22.8584232, longitude: 91.227936 } as {
     latitude: number;
     longitude: number;
   } | null,
-  /** schema.org openingHours strings, e.g. "Mo-Su 15:00-18:00" */
   openingHours: [] as string[],
 };
 
@@ -94,50 +63,20 @@ export const CLUB_MAP_EMBED_URL = CONTACT.geo
   ? `https://maps.google.com/maps?q=${CONTACT.geo.latitude},${CONTACT.geo.longitude}&z=16&output=embed`
   : `https://maps.google.com/maps?q=${encodeURIComponent(CLUB_FULL_LOCATION)}&z=15&output=embed`;
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   SEO_METADATA — one object, every title, description and keyword.
+/*SEO_METADATA — one object, every title, description and keyword.
 
      SEO_METADATA.titleTemplate        the single title template
      SEO_METADATA.targets.<key>        { title, description, keywords } for one
-                                       page or one search intent
-
-   `targets.brand` doubles as the site-wide default: the root layout, the web
-   app manifest and the club's JSON-LD all read it, so there is no second copy
-   of the club's boilerplate description to keep in sync.
-
-   Rules that keep this from drifting:
-
-   1. Spell place names the way people type them — Kabirhat, Noakhali,
-      Bhuiyarhat, Bhuiyarhat Chowrasta — identically here, in the visible
-      copy and in the structured data.
-   2. One target per search intent. `home` answers brand + town + crossroads at
-      once; `brand`, `locality`, `kabirhat`, `noakhali`, `bhuiyarhat` and
-      `ground` exist for pages that lead with a single place or phrasing.
-   3. A target's keywords are the phrases that page is written to rank for.
-      Google ignores the keywords meta tag itself — the value of these lists is
-      that every page's visible copy is written to contain its own list.
-   ═══════════════════════════════════════════════════════════════════════════ */
+                                       page or one search intent */
 
 export const SEO_METADATA = {
-  /** Suffix applied to every page title unless that target sets
-      `absoluteTitle`. The root layout hands this string to Next directly.
-
-      Deliberately the short brand form. The long "| Nayadiganta Sporting
-      Club" eats 28 of a title's ~60 usable characters, which pushed almost
-      every page past the point where Google truncates. "Nayadiganta SC" is
-      itself a phrase people search for, and the full club name is still in
-      every description, heading and structured-data block. */
+ 
   titleTemplate: `%s | ${SITE_SHORT_NAME}`,
 
   targets: {
-    /* ── The homepage: brand + town + crossroads in one title, so a single URL
-          answers "nayadiganta club", "nayadiganta club kabirhat noakhali" and
-          "nayadiganta club bhuiyarhat chowrasta". `absoluteTitle` keeps the
-          long title from collecting a second "| Nayadiganta Sporting Club". ── */
+
     home: {
-      /* 56 characters: brand first, then the vertical and the two place names
-         people actually type. "Bhuiyarhat Chowrasta" is carried by the
-         description, the H1 and the structured data instead of the title. */
+
       title: `${SITE_NAME} — Football, ${CLUB.city}, ${CLUB.region}`,
       description: `The official website of ${SITE_NAME} — a football club at ${CLUB.address}, ${CLUB.city}, ${CLUB.region}, Bangladesh. Squad, fixtures and results.`,
       /* The homepage is the one page that legitimately owns every phrasing,
@@ -593,13 +532,33 @@ export function buildMetadata(meta: PageMeta): Metadata {
    Never throws: a cold or unreachable API degrades to the fallback so a
    build or a page render can always complete. */
 
+/*  How long a server-rendered page may serve cached data.
+
+    These pages are statically rendered (good for LCP and for crawlers), but the
+    club publishes through the admin at unpredictable times. At the old 3600s
+    window an article written at 16:27 was invisible on the live site until
+    17:27 — which reads as "my content is not showing" rather than "cache".
+    One minute keeps first paint just as fast (the cached HTML is still served
+    instantly and regenerates in the background) while edits go live almost
+    immediately.
+
+    Keep this in sync with the `revalidate` literal exported by each page —
+    Next reads that one statically and cannot resolve an imported constant. */
+export const CONTENT_REVALIDATE = 60;
+
+/*  Every server-side API fetch carries this tag so a single revalidateTag() can
+    clear the data cache as well as the rendered pages. Timed revalidation alone
+    would still hand back up to 60s-old JSON after an admin edit; see
+    app/api/revalidate/route.ts. */
+export const API_CACHE_TAG = "api-data";
+
 export async function serverFetch<T = unknown>(
   path: string,
-  revalidate = 3600,
+  revalidate = CONTENT_REVALIDATE,
 ): Promise<T | null> {
   try {
     const res = await fetch(`${API_URL}${path}`, {
-      next: { revalidate },
+      next: { revalidate, tags: [API_CACHE_TAG] },
       headers: { Accept: "application/json" },
       /* Generous timeout: serverFetch also runs at build time, where a cold
          API instance can take several seconds to wake. A short timeout here

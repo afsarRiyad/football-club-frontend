@@ -15,7 +15,7 @@ import SquadClient, { type SquadInitialData } from "@/components/pages/SquadClie
    teams 10, plus SCHEDULED and LIVE matches.
    ──────────────────────────────────────────────────────────────────── */
 
-export const revalidate = 3600;
+export const revalidate = 60; /* Content window — see CONTENT_REVALIDATE in lib/seo.ts */
 
 type ListResponse<T> = { data?: T[]; totalPages?: number };
 

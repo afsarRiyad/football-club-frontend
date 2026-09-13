@@ -5,7 +5,7 @@ import AboutClient from "@/components/pages/AboutClient";
 /* Club details are fetched here so the club name, description and facts are
    present in the initial HTML for crawlers. Refreshed hourly. */
 
-export const revalidate = 3600;
+export const revalidate = 60; /* Content window — see CONTENT_REVALIDATE in lib/seo.ts */
 
 type ListResponse<T> = { data?: T[] };
 

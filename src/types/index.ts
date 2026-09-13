@@ -191,7 +191,11 @@ export interface Match {
   _id: string;
   club: string | Club;
   homeTeam: string | Team;
-  awayTeam: string | Team;
+  /* Either a populated/!referenced Team, or omitted when the opponent was typed
+     in as free text (see awayTeamName). */
+  awayTeam?: string | Team | null;
+  /** Free-text opponent name for one-off fixtures — never a Team document. */
+  awayTeamName?: string;
   matchDate: string;
   kickoff?: string;
   venue?: MatchVenue;
@@ -259,6 +263,8 @@ export interface News {
   category?: NewsCategory;
   tags?: string[];
   isPublished: boolean;
+  /** The story chosen for the big hero slot (only one at a time). */
+  isFeatured?: boolean;
   publishedAt?: string;
   viewCount: number;
   createdAt: string;

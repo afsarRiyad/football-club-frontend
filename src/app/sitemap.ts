@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { SITE_URL, serverFetch } from "@/lib/seo";
 
 /* Regenerate the sitemap hourly instead of on every request. */
-export const revalidate = 3600;
+export const revalidate = 60; /* Content window — see CONTENT_REVALIDATE in lib/seo.ts */
 
 type ListResponse<T> = { data?: T[] };
 
