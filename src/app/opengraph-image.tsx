@@ -62,7 +62,7 @@ export default async function Image() {
             color: "#7C7C8A",
           }}
         >
-          <div>Bhuiyyarhat Chowrasta · Kabirhat · Noakhali</div>
+          <div>Bhuiyarhat Chowrasta · Kabirhat · Noakhali</div>
           <div style={{ color: "#3ED598", fontWeight: 700 }}>Football Club</div>
         </div>
       </div>

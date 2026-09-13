@@ -1,24 +1,13 @@
 import type { Metadata } from "next";
 import JsonLd from "@/components/seo/json-ld";
 import { breadcrumbSchema, collectionPageSchema } from "@/lib/structured-data";
-import { buildMetadata } from "@/lib/seo";
+import { buildMetadata, seoTarget } from "@/lib/seo";
 
-const TITLE = "Club News, Transfers & Match Reports";
-const DESCRIPTION =
-  "The latest news from Nayadiganta Sporting Club — transfers, match reports, player interviews, tactical analysis and official club announcements.";
+const TITLE = seoTarget("news").title;
+const DESCRIPTION = seoTarget("news").description;
 const PATH = "/news";
 
-export const metadata: Metadata = buildMetadata({
-  title: TITLE,
-  description: DESCRIPTION,
-  path: PATH,
-  keywords: [
-    "Nayadiganta news",
-    "football club news Bangladesh",
-    "transfer news",
-    "match reports",
-  ],
-});
+export const metadata: Metadata = buildMetadata({ target: "news", path: PATH });
 
 export default function NewsSeoLayout({ children }: { children: React.ReactNode }) {
   return (

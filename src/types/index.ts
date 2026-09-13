@@ -62,7 +62,7 @@ export interface Club {
   location?: {
     country?: string;
     city?: string;
-    /** Street / area line, e.g. "Bhuiyyarhat Chowrasta". */
+    /** Street / area line, e.g. "Bhuiyarhat Chowrasta". */
     address?: string;
   };
   createdAt: string;

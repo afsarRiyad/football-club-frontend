@@ -3,7 +3,6 @@ import Link from "next/link";
 import MapEmbed from "@/components/shared/MapEmbed";
 import {
   CLUB,
-  CLUB_FULL_LOCATION,
   CLUB_MAP_URL,
   CONTACT,
   SITE_NAME,
@@ -19,14 +18,9 @@ import {
    disagree — inconsistent NAP data is what breaks local rankings.
    ──────────────────────────────────────────────────────────────────── */
 
-const TITLE = "Contact & Directions — Bhuiyyarhat Chowrasta, Kabirhat";
-const DESCRIPTION = `How to reach ${SITE_NAME}: our ground is at ${CLUB_FULL_LOCATION}. Arrange a friendly, contact the club, or join the youth academy.`;
-
-export const metadata: Metadata = buildMetadata({
-  title: TITLE,
-  description: DESCRIPTION,
-  path: "/contact",
-});
+/* Title, description and keywords all come from the `contact` target in
+   SEO_METADATA — the one place this page's search copy lives. */
+export const metadata: Metadata = buildMetadata({ target: "contact", path: "/contact" });
 
 const directions = [
   {

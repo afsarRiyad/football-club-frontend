@@ -58,7 +58,7 @@ export default function AboutClient({ club: initialClub }: { club: Club | null }
     );
   }
 
-  // Full postal line: street/area, city, country (e.g. "Bhuiyyarhat Chowrasta, Kabirhat, Bangladesh").
+  // Full postal line: street/area, city, country (e.g. "Bhuiyarhat Chowrasta, Kabirhat, Bangladesh").
   const location = club.location
     ? [club.location.address, club.location.city, club.location.country]
         .filter(Boolean)

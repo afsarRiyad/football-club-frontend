@@ -39,6 +39,11 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  /* Bounded request time. Without this a backend that accepts the connection
+     but never answers (cold instance, stalled tunnel) left callers pending
+     forever — on the home page that meant the fallback fetch never settled
+     and content that depends on it stayed blank. */
+  timeout: 15000,
 });
 
 // ─── Request Interceptor: Attach Access Token ──────────────────────

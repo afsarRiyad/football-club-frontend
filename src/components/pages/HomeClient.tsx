@@ -23,11 +23,11 @@ import {
 import { Trophy, Loader2 } from "lucide-react";
 import api from "@/lib/api";
 import toast from "react-hot-toast";
-import { Match, News, Player, Club, Academy } from "@/types";
+import { Match, News, Player, Club, Academy, Gallery } from "@/types";
 import { Navbar, Footer } from "@/components/layout";
 import { Button } from "@/components/ui";
 import { cn, CLUB_TIME_ZONE } from "@/lib/utils";
-import { CLUB_MAP_URL } from "@/lib/seo";
+import { CLUB_MAP_URL, SITE_NAME } from "@/lib/seo";
 
 
 // Lazy load heavy components that aren't needed immediately
@@ -49,6 +49,9 @@ export type HomeData = {
   matches: Match[];
   players: Player[];
   academies: Academy[];
+  /** Gallery documents for the photo marquee — fetched server-side so the
+      marquee does not have to call the API from the browser. */
+  galleries: Gallery[];
 };
 
 /* ─── Helpers ─── */
@@ -476,6 +479,10 @@ export default function HomeClient({ initialData }: { initialData: HomeData }) {
     } catch (e) { console.error(e); } finally { setLoading(false); }
   };
 
+  /* Static fallback so the hero heading is identical in the server HTML
+     whether or not the API answered. */
+  const heroClubName = club?.name || SITE_NAME;
+
   const upcoming = matches.filter((m) => m.status === "SCHEDULED").slice(0, 4);
   const recent = matches.filter((m) => m.status === "FT" || m.status === "LIVE").slice(0, 4);
 
@@ -494,40 +501,27 @@ export default function HomeClient({ initialData }: { initialData: HomeData }) {
           <div className="absolute inset-0 bg-gradient-to-br from-pitch-night via-surface to-pitch-night" />
           <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.02]" />
 
-          {loading ? (
-            <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
-              <div className="max-w-2xl space-y-5 animate-pulse">
-                <div className="h-4 w-40 rounded-lg bg-surface-raised border border-line/40" />
-                <div className="h-14 md:h-20 w-4/5 rounded-xl bg-surface-raised border border-line/40" />
-                <div className="h-4 w-2/3 rounded-lg bg-surface-raised border border-line/40" />
-                <div className="flex gap-3 pt-3">
-                  <div className="h-11 w-36 rounded-lg bg-surface-raised border border-line/40" />
-                  <div className="h-11 w-28 rounded-lg bg-surface-raised border border-line/40" />
-                </div>
-              </div>
-            </div>
-          ) : (
-            <motion.div style={heroStyle} className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
+          {/* The hero is never gated on API data. `club?.name` is only a label,
+              so showing a skeleton here while the fallback client fetch was in
+              flight kept the page's LCP element (the <h1>) off screen until
+              that request settled — and a hanging backend pushes LCP into the
+              tens of seconds. The heading now paints on the first frame with
+              the static club name as the fallback. */}
+          <motion.div style={heroStyle} className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
             <div className="max-w-2xl">
               {/* Hero entrance is CSS, not framer-motion: `initial={{opacity:0}}`
                   left the heading invisible in the server HTML until hydration,
                   which pushed mobile LCP out to ~5s (it is the LCP element).
                   A CSS animation starts on the first paint instead. */}
               <p style={{ animationDelay: "0ms" }} className="hero-rise text-pitch-accent font-mono text-sm mb-5 tracking-wider uppercase">
-                {club?.name}
+                {heroClubName}
               </p>
               <h1 style={{ animationDelay: "0ms" }} className="hero-rise text-5xl md:text-7xl lg:text-8xl font-bold text-floodlight font-display tracking-tight leading-[0.95]">
                 {/* The visible hero line stays short, but the heading also carries
                     the full club name for crawlers and screen readers. It is not
                     hidden from users — sr-only text is exposed to assistive tech. */}
-                {club?.name && <span className="sr-only">{club.name}: </span>}
-                {club?.name ? (
-                  <>
-                  Welcome to <span className="text-pitch-accent">{club.name.split(" ")[0]}</span>
-                  </>
-                ) : (
-                  <>Welcome to <span className="text-pitch-accent">Our Club</span></>
-                )}
+                <span className="sr-only">{heroClubName}: </span>
+                Welcome to <span className="text-pitch-accent">{heroClubName.split(" ")[0]}</span>
               </h1>
               <p style={{ animationDelay: "90ms" }} className="hero-rise text-mist text-lg mt-6 max-w-lg leading-relaxed">
                 Squad, fixtures, news — everything about the club, all in one place.
@@ -544,8 +538,7 @@ export default function HomeClient({ initialData }: { initialData: HomeData }) {
                 </Link>
               </div>
             </div>
-            </motion.div>
-          )}
+          </motion.div>
 
         </section>
 
@@ -557,20 +550,20 @@ export default function HomeClient({ initialData }: { initialData: HomeData }) {
         {upcoming.length > 0 && (
           <section className="bg-surface border-y border-line">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <Stagger className="flex items-center gap-6 py-5 overflow-x-auto">
+              <div className="flex items-center gap-6 py-5 overflow-x-auto">
                 <span className="text-xs font-mono text-text-secondary uppercase tracking-widest shrink-0">Next Up</span>
                 <span className="h-4 w-px bg-line shrink-0" />
                 {upcoming.slice(0, 3).map((m) => (
-                  <motion.div key={m._id} variants={itemVariant}>
+                  <div key={m._id}>
                     <Link href={`/matches/${m._id}`} className="font-card flex items-center gap-4 px-4 py-2 rounded-xl hover:bg-surface-raised transition-colors shrink-0">
                       <span className="text-xs text-text-secondary font-mono">{formatDate(m.matchDate)}</span>
                       <span className="text-sm text-floodlight font-medium">{getTeamName(m.homeTeam)}</span>
                       <span className="text-sm font-mono font-bold text-pitch-accent">vs</span>
                       <span className="text-sm text-floodlight font-medium">{getTeamName(m.awayTeam)}</span>
                     </Link>
-                  </motion.div>
+                  </div>
                 ))}
-              </Stagger>
+              </div>
             </div>
           </section>
         )}
@@ -578,27 +571,27 @@ export default function HomeClient({ initialData }: { initialData: HomeData }) {
         {/* ═══════════ STATS ═══════════ */}
         <section className="border-b border-line/50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20">
-            <Stagger className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12" delay={0.1}>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12">
               {[
                 { icon: FiUsers, value: 25, suffix: "+", label: "Players" },
                 { icon: FiCalendar, value: 30, suffix: "+", label: "Matches This Season" },
                 { icon: Trophy, value: 12, suffix: "", label: "Trophies Won" },
                 { icon: FiMapPin, value: 1, suffix: "", label: "Home Ground" },
               ].map((s) => (
-                <motion.div key={s.label} variants={itemVariant} className="font-card text-center md:text-left">
+                <div key={s.label} className="font-card text-center md:text-left">
                   <s.icon className="h-5 w-5 text-pitch-accent mb-3 mx-auto md:mx-0" />
                   <p className="text-3xl md:text-4xl font-bold text-floodlight">
                     <CountUp target={s.value} suffix={s.suffix} />
                   </p>
                   <p className="text-sm text-mist mt-1">{s.label}</p>
-                </motion.div>
+                </div>
               ))}
-            </Stagger>
+            </div>
           </div>
         </section>
 
         {/* ═══════════ PHOTO MARQUEE ═══════════ */}
-        <InfinitePhotoMarquee />
+        <InfinitePhotoMarquee galleries={initialData.galleries} />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
@@ -845,7 +838,7 @@ export default function HomeClient({ initialData }: { initialData: HomeData }) {
                   A football club in Kabirhat, Noakhali
                 </h2>
                 <p className="text-mist leading-relaxed">
-                  Nayadiganta Sporting Club is based at Bhuiyyarhat Chowrasta, Kabirhat,
+                  Nayadiganta Sporting Club is based at Bhuiyarhat Chowrasta, Kabirhat,
                   Noakhali. Training sessions and home fixtures take place at our ground
                   there, and we welcome teams from across Noakhali and the wider
                   Bangladesh football scene.
@@ -855,7 +848,7 @@ export default function HomeClient({ initialData }: { initialData: HomeData }) {
               <Reveal direction="right">
                 <div className="font-card bg-surface rounded-2xl border border-line/60 p-6">
                   <p className="text-xs font-mono text-mist uppercase tracking-widest mb-2">Our Ground</p>
-                  <p className="text-lg font-bold text-floodlight font-display mb-1">Bhuiyyarhat Chowrasta</p>
+                  <p className="text-lg font-bold text-floodlight font-display mb-1">Bhuiyarhat Chowrasta</p>
                   <p className="text-sm text-mist mb-5">Kabirhat, Noakhali, Bangladesh</p>
                   <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
                     <a

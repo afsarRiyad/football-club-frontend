@@ -1,12 +1,12 @@
 import type { MetadataRoute } from "next";
-import { DEFAULT_DESCRIPTION, SITE_NAME, SITE_SHORT_NAME } from "@/lib/seo";
+import { SITE_NAME, SITE_SHORT_NAME, seoTarget } from "@/lib/seo";
 
 /** Web app manifest — install-ability + mobile search presentation. */
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: SITE_NAME,
     short_name: SITE_SHORT_NAME,
-    description: DEFAULT_DESCRIPTION,
+    description: seoTarget("brand").description,
     start_url: "/",
     display: "standalone",
     background_color: "#FFFDF9",

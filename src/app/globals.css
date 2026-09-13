@@ -2,38 +2,8 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Clash Display — self-hosted from Fontshare */
-@font-face {
-  font-family: 'Clash Display';
-  src: url('/fonts/ClashDisplay-400.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Clash Display';
-  src: url('/fonts/ClashDisplay-500.woff2') format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Clash Display';
-  src: url('/fonts/ClashDisplay-600.woff2') format('woff2');
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Clash Display';
-  src: url('/fonts/ClashDisplay-700.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
+/* Clash Display is loaded via next/font/local in layout.tsx for automatic
+   preloading and self-hosting — no @font-face declarations needed here. */
 
 :root {
   /* Teal/Coral palette - warm, distinctive club identity */
@@ -112,7 +82,7 @@
 
   /* Typography - Keep original fonts, just new colors */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Clash Display", var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-clash), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-card: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, monospace;
 }
@@ -486,19 +456,22 @@ body {
 /* ═══════════════════════════════════════════
    Hero entrance (page load)
    ═══════════════════════════════════════════
-   Deliberately CSS rather than JS. The hero headline is the LCP element, and
-   hiding it behind a hydration-gated animation meant it was not painted until
-   the bundle ran — that is what pushed mobile LCP to ~5s. A CSS animation
-   starts on the first paint, so the heading is on screen right away while
-   still fading + rising in. */
+   Deliberately CSS rather than JS: a CSS animation starts on the first paint,
+   so the headline is on screen right away instead of waiting for hydration.
+
+   Transform only — deliberately no opacity. Fading in from `opacity: 0` makes
+   the headline invisible at its first paint, and Chrome's LCP does not count
+   content that is painted while transparent: the hero <h1> (by far the largest
+   element above the fold) dropped out of the running entirely and the largest
+   *counted* element became a small text span further down the page. Moving the
+   text is enough movement to read as an entrance, and keeps the heading
+   eligible to be the LCP element from the very first frame. */
 
 @keyframes hero-rise {
   from {
-    opacity: 0;
     transform: translate3d(0, 12px, 0);
   }
   to {
-    opacity: 1;
     transform: translate3d(0, 0, 0);
   }
 }

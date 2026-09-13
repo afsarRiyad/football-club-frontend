@@ -1,25 +1,16 @@
 import type { Metadata } from "next";
 import JsonLd from "@/components/seo/json-ld";
 import { breadcrumbSchema, collectionPageSchema } from "@/lib/structured-data";
-import { buildMetadata } from "@/lib/seo";
+import { buildMetadata, seoTarget } from "@/lib/seo";
 
-const TITLE = "Youth Academy — Player Development";
-const DESCRIPTION =
-  "The Nayadiganta Sporting Club Academy develops young footballers at Bhuiyyarhat Chowrasta, Kabirhat, Noakhali, Bangladesh. Age groups from U8 to U21, professional coaching, training schedules and a pathway to the first team.";
+/* Title, description and keywords live in the `academy` target — including the
+   Kabirhat / Bhuiyarhat / Noakhali phrasings, since the academy serves those
+   places. The same strings feed the JSON-LD below. */
+const TITLE = seoTarget("academy").title;
+const DESCRIPTION = seoTarget("academy").description;
 const PATH = "/academy";
 
-export const metadata: Metadata = buildMetadata({
-  title: TITLE,
-  description: DESCRIPTION,
-  path: PATH,
-  keywords: [
-    "football academy Bangladesh",
-    "youth football Noakhali",
-    "Nayadiganta academy",
-    "football training Kabirhat",
-    "football academy Noakhali",
-  ],
-});
+export const metadata: Metadata = buildMetadata({ target: "academy", path: PATH });
 
 export default function AcademySeoLayout({ children }: { children: React.ReactNode }) {
   return (

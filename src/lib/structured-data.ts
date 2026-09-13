@@ -2,11 +2,11 @@ import {
   CLUB,
   CLUB_MAP_URL,
   CONTACT,
-  DEFAULT_KEYWORDS,
   SITE_NAME,
   SITE_URL,
   absoluteUrl,
   metaDescription,
+  seoTarget,
 } from "./seo";
 
 /* ────────────────────────────────────────────────────────────────────
@@ -44,8 +44,9 @@ export function sportsClubSchema(): Json {
     foundingDate: CLUB.founded,
     foundingLocation: { "@type": "Place", name: fullLocationName, address: postalAddress },
     sport: CLUB.sport,
-    /* The phrases the club wants to be found for, attached to the entity. */
-    keywords: DEFAULT_KEYWORDS.join(", "),
+    /* The phrases the club wants to be found for, attached to the entity —
+       the brand target's own list, so the entity and the metadata agree. */
+    keywords: seoTarget("brand").keywords.join(", "),
     address: postalAddress,
     location: { "@type": "Place", name: fullLocationName, address: postalAddress },
     hasMap: CLUB_MAP_URL,

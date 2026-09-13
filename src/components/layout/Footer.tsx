@@ -40,7 +40,7 @@ export default function Footer() {
                 district live here rather than only on the About page. */}
             <p className="text-sm text-text-secondary/90">
               The official website of {SITE_NAME} — a football club based at
-              Bhuiyyarhat Chowrasta, Kabirhat, Noakhali, Bangladesh.
+              Bhuiyarhat Chowrasta, Kabirhat, Noakhali, Bangladesh.
             </p>
             {/* Only rendered once CLUB.socials is filled in: a dead `href="#"`
                 link is worse for users and crawlers than no icon at all. */}

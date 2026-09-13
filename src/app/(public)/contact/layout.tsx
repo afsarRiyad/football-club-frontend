@@ -1,37 +1,14 @@
-import type { Metadata } from "next";
 import JsonLd from "@/components/seo/json-ld";
 import { breadcrumbSchema } from "@/lib/structured-data";
-import {
-  CLUB,
-  CLUB_FULL_LOCATION,
-  CONTACT,
-  SITE_NAME,
-  absoluteUrl,
-  buildMetadata,
-} from "@/lib/seo";
+import { CLUB, CONTACT, absoluteUrl, seoTarget } from "@/lib/seo";
 
-/* Leads with the ground's location, because that is the part of this page's
-   subject that is uniquely ours — "contact a football club" matches thousands
-   of pages, "Bhuiyyarhat Chowrasta, Kabirhat, Noakhali" matches us. */
-const TITLE = "Contact & Directions — Bhuiyyarhat Chowrasta, Kabirhat";
-const DESCRIPTION = `How to reach ${SITE_NAME}: our ground is at ${CLUB_FULL_LOCATION}${
-  CONTACT.telephone ? `, phone ${CONTACT.telephone}` : ""
-}. Arrange a friendly, contact the club, or join the youth academy.`;
+/* The page's own title/description/keywords come from the `contact` target in
+   SEO_METADATA (that is the file to edit), and the same two strings feed the
+   ContactPage JSON-LD below. Metadata itself is exported by page.tsx, so the
+   contact route has exactly one metadata declaration. */
+const TITLE = seoTarget("contact").title;
+const DESCRIPTION = seoTarget("contact").description;
 const PATH = "/contact";
-
-export const metadata: Metadata = buildMetadata({
-  title: TITLE,
-  description: DESCRIPTION,
-  path: PATH,
-  keywords: [
-    "Nayadiganta Sporting Club contact",
-    "Nayadiganta club address",
-    "Bhuiyyarhat Chowrasta Kabirhat",
-    "Kabirhat football ground",
-    "Noakhali football club contact",
-    "Nayadiganta club phone number",
-  ],
-});
 
 export default function ContactSeoLayout({ children }: { children: React.ReactNode }) {
   return (

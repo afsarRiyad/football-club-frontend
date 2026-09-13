@@ -37,8 +37,8 @@ export default function Navbar() {
               <Image
                 src="/logo.png"
                 alt="N.S Club Logo"
-                width={1305}
-                height={1206}
+                width={64}
+                height={59}
                 className="h-8 w-auto object-contain"
                 loading="eager"
                 priority

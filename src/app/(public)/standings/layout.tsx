@@ -1,24 +1,13 @@
 import type { Metadata } from "next";
 import JsonLd from "@/components/seo/json-ld";
 import { breadcrumbSchema, collectionPageSchema } from "@/lib/structured-data";
-import { buildMetadata } from "@/lib/seo";
+import { buildMetadata, seoTarget } from "@/lib/seo";
 
-const TITLE = "League Standings & Top Scorers";
-const DESCRIPTION =
-  "League tables, points, goal difference and the top scorers for Nayadiganta Sporting Club and their competitions — updated through the season.";
+const TITLE = seoTarget("standings").title;
+const DESCRIPTION = seoTarget("standings").description;
 const PATH = "/standings";
 
-export const metadata: Metadata = buildMetadata({
-  title: TITLE,
-  description: DESCRIPTION,
-  path: PATH,
-  keywords: [
-    "football league table",
-    "league standings Bangladesh",
-    "top scorers",
-    "Nayadiganta standings",
-  ],
-});
+export const metadata: Metadata = buildMetadata({ target: "standings", path: PATH });
 
 export default function StandingsSeoLayout({ children }: { children: React.ReactNode }) {
   return (

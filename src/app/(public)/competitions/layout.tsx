@@ -1,24 +1,13 @@
 import type { Metadata } from "next";
 import JsonLd from "@/components/seo/json-ld";
 import { breadcrumbSchema, collectionPageSchema } from "@/lib/structured-data";
-import { buildMetadata } from "@/lib/seo";
+import { buildMetadata, seoTarget } from "@/lib/seo";
 
-const TITLE = "Competitions, Leagues & Tournaments";
-const DESCRIPTION =
-  "Every competition Nayadiganta Sporting Club plays in — leagues, cups, and tournaments, with participating teams, formats, fixtures and results.";
+const TITLE = seoTarget("competitions").title;
+const DESCRIPTION = seoTarget("competitions").description;
 const PATH = "/competitions";
 
-export const metadata: Metadata = buildMetadata({
-  title: TITLE,
-  description: DESCRIPTION,
-  path: PATH,
-  keywords: [
-    "football league Bangladesh",
-    "Nayadiganta competitions",
-    "football cup Noakhali",
-    "club tournaments",
-  ],
-});
+export const metadata: Metadata = buildMetadata({ target: "competitions", path: PATH });
 
 export default function CompetitionsSeoLayout({ children }: { children: React.ReactNode }) {
   return (
