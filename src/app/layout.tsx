@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import JsonLd from "@/components/seo/json-ld";
 import { sportsClubSchema, webSiteSchema } from "@/lib/structured-data";
 import {
+  BRAND_KEYWORDS,
   CLUB,
   SEO_METADATA,
   SITE_LOCALE,
@@ -81,7 +82,10 @@ export const metadata: Metadata = {
     template: SEO_METADATA.titleTemplate,
   },
   description: brand.description,
-  keywords: [...brand.keywords],
+  /* The root metadata is not built by buildMetadata, so the shared brand
+     spellings (Bengali script + common typos) are added explicitly here — the
+     root layout's keywords are the fallback for any page that sets none. */
+  keywords: [...BRAND_KEYWORDS, ...brand.keywords],
   applicationName: SITE_NAME,
   authors: [{ name: SITE_NAME, url: SITE_URL }],
   creator: SITE_NAME,
@@ -106,6 +110,9 @@ export const metadata: Metadata = {
     url: "/",
     siteName: SITE_NAME,
     locale: SITE_LOCALE,
+    /* Tells scrapers a Bengali version is the intended alternate audience —
+       most searches for this club are typed in Bengali script. */
+    alternateLocale: ["bn_BD"],
     title: brand.title,
     description: brand.description,
   },

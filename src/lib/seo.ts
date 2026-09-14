@@ -54,20 +54,83 @@ export const CONTACT = {
   openingHours: [] as string[],
 };
 
-/**
- * Map embed for the contact page. Uses the exact pin when we have coordinates,
- * otherwise falls back to the address, so it always points somewhere real.
- * `maps.google.com/maps?...&output=embed` needs no API key.
- */
+
 export const CLUB_MAP_EMBED_URL = CONTACT.geo
   ? `https://maps.google.com/maps?q=${CONTACT.geo.latitude},${CONTACT.geo.longitude}&z=16&output=embed`
   : `https://maps.google.com/maps?q=${encodeURIComponent(CLUB_FULL_LOCATION)}&z=15&output=embed`;
 
-/*SEO_METADATA — one object, every title, description and keyword.
+export const CLUB_BANGLA_NAMES = [
+  "নয়াদিগন্ত",
+  "নয়াদিগন্ত ক্লাব",
+  "নয়াদিগন্ত স্পোর্টিং ক্লাব",
+] as const;
 
-     SEO_METADATA.titleTemplate        the single title template
-     SEO_METADATA.targets.<key>        { title, description, keywords } for one
-                                       page or one search intent */
+export const KEYWORD_VARIANTS = {
+  bangla: [
+    ...CLUB_BANGLA_NAMES,
+    "নয়াদিগন্ত ফুটবল ক্লাব",
+    "নয়াদিগন্ত ফুটবল দল",
+    "নয়াদিগন্ত স্পোর্টিং",
+    "নয়াদিগন্ত কাবিরহাট",
+    "নয়াদিগন্ত নোয়াখালী",
+    "নয়াদিগন্ত ক্লাব কাবিরহাট",
+    "নয়াদিগন্ত ক্লাব নোয়াখালী",
+    "নয়াদিগন্ত ক্লাব কাবিরহাট নোয়াখালী",
+    "নয়াদিগন্ত ক্লাব ভূঁইয়ারহাট",
+    "নয়াদিগন্ত ক্লাব ভূইয়ারহাট",
+    "নয়াদিগন্ত ক্লাব ভূঁইয়ারহাট চৌরাস্তা",
+    "নয়াদিগন্ত ক্লাব বাংলাদেশ",
+    "ভূঁইয়ারহাট চৌরাস্তা",
+    "ভূইয়ারহাট",
+    "কাবিরহাট ফুটবল ক্লাব",
+    "নোয়াখালী ফুটবল ক্লাব",
+    "ফুটবল ক্লাব",
+    "ফুটবল দল",
+    "ফুটবল ম্যাচের সময়সূচি",
+    "ফুটবল একাডেমি",
+    "ফুটবল লিগ",
+    "নয়াদিগন্ত ক্লাবের ঠিকানা",
+  ],
+  /* English transliterations and typos people actually type. */
+  brand: [
+    "Nayadiganta",
+    "Nayadigonta",
+    "Nayadiganto",
+    "Nayadiganta SC",
+    "Nayadiganta club",
+    "Nayadiganta sporting club",
+    "Nayadiganta football club",
+    "Noyadiganta",
+    "Noyadiganta club",
+    "Noyadigonta",
+    "Noadigonta",
+    "Noadigonto",
+    "Noadigonto club",
+    "Naya diganta",
+    "Naya Diganta club",
+    "Noya diganta",
+  ],
+  /* The places, spelled the ways they get typed. */
+  places: [
+    "Kabirhat",
+    "Kobirhat",
+    "Noakhali",
+    "Noakali",
+    "Bhuiyarhat",
+    "Bhuiyarbhat",
+    "Bhuiyarhat Chowrasta",
+  ],
+} as const;
+
+/** Brand spellings (both scripts) — carried by every page. */
+export const BRAND_KEYWORDS: readonly string[] = [
+  ...KEYWORD_VARIANTS.bangla,
+  ...KEYWORD_VARIANTS.brand,
+];
+
+export const BRAND_PLACE_KEYWORDS: readonly string[] = KEYWORD_VARIANTS.places.flatMap(
+  (place) => ["Nayadiganta", "Noadigonto", "Naya diganta", "Noyadiganta", "Noyadigonto"].map((brand) => `${brand} club ${place}`),
+);
 
 export const SEO_METADATA = {
  
@@ -79,17 +142,39 @@ export const SEO_METADATA = {
 
       title: `${SITE_NAME} — Football, ${CLUB.city}, ${CLUB.region}`,
       description: `The official website of ${SITE_NAME} — a football club at ${CLUB.address}, ${CLUB.city}, ${CLUB.region}, Bangladesh. Squad, fixtures and results.`,
-      /* The homepage is the one page that legitimately owns every phrasing,
-         so its list is the longest. */
       keywords: [
+        ...BRAND_PLACE_KEYWORDS,
         "Nayadiganta Sporting Club",
-        "Nayadiganta Club",
+        "Nayadiganta",
+        "Naya diganta",
+        "Noyadiganta",
+        "Noyadigonta",
+        "Noyadigonto",
+        "Noadigonto club",
+        "club",
+        "bangladesh club",
+        "noakhali club",
+        "noakhali football club",
+        "Noadigonto",
+        "নয়াদিগন্ত",
+        "নয়াদিগন্ত ক্লাব",
+        "নয়াদিগন্ত ক্লাব কাবিরহাট",
+        "নয়াদিগন্ত ক্লাব কাবিরহাট নোয়াখালী",
+        "নয়াদিগন্ত ক্লাব কাবিরহাট নোয়াখালী বাংলাদেশ",
+        "নয়াদিগন্ত ক্লাব বাংলাদেশ",
+        "নয়াদিগন্ত কাবিরহাট",
         "Nayadiganta SC",
+        "Nayadiganta Club",
+        "Nayadiganta SC bhuiyyarhat",
         "Nayadiganta football club",
         "Nayadiganta club Kabirhat Noakhali",
+        "Nayadiganta Noakhali",
         "Nayadiganta club Kabirhat",
+        "Nayadiganta Kabirhat",
         "Nayadiganta club Noakhali",
+        "Nayadiganta Noakhali",
         "Nayadiganta club Bhuiyarhat",
+        "Nayadiganta Bhuiyarhat",
         "Nayadiganta Sporting Club Bhuiyarhat Chowrasta",
         "Nayadiganta club Kabirhat Bhuiyarhat",
         "Nayadiganta club near Bhuiyarhat Chowrasta",
@@ -105,8 +190,6 @@ export const SEO_METADATA = {
       absoluteTitle: true,
     },
 
-    /* ── Brand-only queries: "nayadiganta club", "nayadiganta sporting club",
-          "nayadiganta sc" — no location attached. ── */
     brand: {
       /* Already leads with the club name, so the suffix would only repeat it. */
       title: `${SITE_NAME} — Official Club Website`,
@@ -130,10 +213,10 @@ export const SEO_METADATA = {
 
     /* ── Town + district together: "nayadiganta club kabirhat noakhali". ── */
     locality: {
-      /* Starts with the short brand, so no suffix either. */
       title: `${SITE_SHORT_NAME} — Football Club in ${CLUB_LOCALITY}`,
       description: `Football club in ${CLUB_LOCALITY}: ${SITE_NAME}, at ${CLUB.address}. Look up the squad, the fixture list, results and the league table.`,
       keywords: [
+        ...BRAND_PLACE_KEYWORDS,
         "Nayadiganta club Kabirhat Noakhali",
         "Nayadiganta club Kabirhat",
         "Nayadiganta club Noakhali",
@@ -151,10 +234,10 @@ export const SEO_METADATA = {
 
     /* ── Single-place: Kabirhat. ── */
     kabirhat: {
-      /* 50 characters, and the club name is already in it. */
       title: `Nayadiganta Club Kabirhat — Football Team, ${CLUB.region}`,
       description: `The football club of ${CLUB.city}, ${CLUB.region}: ${SITE_NAME}, based at ${CLUB.address}. Match-day news, player profiles and youth teams.`,
       keywords: [
+        ...BRAND_PLACE_KEYWORDS,
         "Nayadiganta club Kabirhat",
         "Nayadiganta club Kabirhat Noakhali",
         "Nayadiganta Sporting Club Kabirhat",
@@ -172,6 +255,7 @@ export const SEO_METADATA = {
       title: `Nayadiganta Club Noakhali — Football Club, Bangladesh`,
       description: `${SITE_NAME} represents ${CLUB.region} district in Bangladesh's local football, playing at ${CLUB.address} in ${CLUB.city}. See fixtures and results.`,
       keywords: [
+        ...BRAND_PLACE_KEYWORDS,
         "Nayadiganta club Noakhali",
         "Nayadiganta club Noakhali Bangladesh",
         "Nayadiganta Sporting Club Noakhali",
@@ -190,6 +274,7 @@ export const SEO_METADATA = {
       title: `Nayadiganta Club Bhuiyarhat — Football in ${CLUB.city}`,
       description: `Match days at ${CLUB.address}: ${SITE_NAME} trains and plays at the crossroads in ${CLUB.city}, ${CLUB.region}. Directions, fixtures and results.`,
       keywords: [
+        ...BRAND_PLACE_KEYWORDS,
         "Nayadiganta club Bhuiyarhat",
         "Nayadiganta Bhuiyarhat Chowrasta",
         "Nayadiganta club near Bhuiyarhat Chowrasta",
@@ -208,6 +293,7 @@ export const SEO_METADATA = {
       title: `${CLUB.address} Football Ground — ${SITE_SHORT_NAME}`,
       description: `The pitch ${SITE_NAME} calls home: ${CLUB.address}, ${CLUB.city}, ${CLUB.region}. Find it on the map, get directions and check the fixture list.`,
       keywords: [
+        ...BRAND_PLACE_KEYWORDS,
         "Bhuiyarhat Chowrasta football ground",
         "Nayadiganta club ground",
         "Nayadiganta Sporting Club home ground",
@@ -344,8 +430,10 @@ export const SEO_METADATA = {
         CONTACT.telephone ? `, phone ${CONTACT.telephone}` : ""
       }. Directions to the ground and the academy.`,
       keywords: [
+        ...BRAND_PLACE_KEYWORDS,
         "Nayadiganta Sporting Club contact",
         "Nayadiganta club address",
+        "Nayadiganta address",
         "Nayadiganta club Kabirhat",
         "Nayadiganta club Noakhali",
         "Bhuiyarhat Chowrasta Kabirhat",
@@ -372,28 +460,28 @@ export const SEO_METADATA = {
     login: {
       title: "Sign In",
       description: `Sign in to your ${SITE_NAME} account to follow the club, get live score notifications and access member content.`,
-      keywords: ["Nayadiganta club login", "Nayadiganta Sporting Club sign in"],
+      keywords: ["Nayadiganta club login", "Nayadiganta login", "Nayadiganta Sporting Club sign in", "Nayadiganta login",],
       noindex: true,
     },
 
     register: {
       title: "Create Account",
       description: `Create a free ${SITE_NAME} account to follow the club, save fixtures and receive live score notifications.`,
-      keywords: ["Nayadiganta club register", "Nayadiganta Sporting Club account"],
+      keywords: ["Nayadiganta club register","Nayadiganta register", "Nayadiganta Sporting Club account"],
       noindex: true,
     },
 
     forgotPassword: {
       title: "Forgot Password",
       description: `Reset your ${SITE_NAME} account password by email.`,
-      keywords: ["Nayadiganta club password reset"],
+      keywords: ["Nayadiganta club password reset", "Nayadiganta password reset"],
       noindex: true,
     },
 
     resetPassword: {
       title: "Reset Password",
       description: `Choose a new password for your ${SITE_NAME} account.`,
-      keywords: ["Nayadiganta club new password"],
+      keywords: ["Nayadiganta club new password", "Nayadiganta new password"],
       noindex: true,
     },
   },
@@ -413,11 +501,6 @@ export type SeoTarget = {
   noindex?: boolean;
 };
 
-/**
- * Read a target. Exists so the literal object above can stay `as const`
- * (for the exact key names) while callers — including the JSON-LD builders in
- * the page layouts — get the same shape for every entry.
- */
 export function seoTarget(key: SeoTargetKey): SeoTarget {
   return SEO_METADATA.targets[key];
 }
@@ -428,11 +511,6 @@ export const DEFAULT_OG_IMAGE = `${SITE_URL}/opengraph-image`;
 export const absoluteUrl = (path = "/") =>
   `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 
-/* Every title/description/keyword now lives in the single SEO_METADATA object
-   above — look there for the brand, locality (Kabirhat / Noakhali /
-   Bhuiyarhat) and per-page targets. */
-
-/* ─── Page metadata builder ─── */
 
 /** Everything a page contributes that is not a title/description/keyword. */
 type PageMetaBase = {
@@ -451,13 +529,7 @@ type PageMetaBase = {
   noindex?: boolean;
 };
 
-/**
- * A page either names one of the seoTargets — and then gets its title,
- * description and keywords from the object — or brings its own title and
- * description, which is what data-driven routes (a match, a player, an
- * article) have to do. Passing both is allowed on purpose: the explicit title
- * wins and the target still supplies the keywords.
- */
+
 export type PageMeta = PageMetaBase &
   (
     | { target: SeoTargetKey; title?: string; description?: string }
@@ -476,19 +548,18 @@ export function buildMetadata(meta: PageMeta): Metadata {
   const title = meta.title ?? target?.title ?? brand.title;
   const description = meta.description ?? target?.description ?? brand.description;
 
-  /* The target's phrases come first, then anything the page adds, with
-     duplicates dropped so a page can re-add a phrase without it appearing
-     twice in the tag. */
-  const keywords = [...(target?.keywords ?? []), ...(meta.keywords ?? [])].filter(
-    (keyword, index, all) => Boolean(keyword) && all.indexOf(keyword) === index,
-  );
+  /* Every page carries the brand spellings (Bangla + typos) ahead of its own
+     list, so it does not matter which page Google lands on — a search for
+     "Noadigonto club" finds one that says so. Deduped, so a target that names a
+     variant itself does not repeat it. */
+  const keywords = [
+    ...BRAND_KEYWORDS,
+    ...(target?.keywords ?? []),
+    ...(meta.keywords ?? []),
+  ].filter((keyword, index, all) => Boolean(keyword) && all.indexOf(keyword) === index);
 
   const noindex = meta.noindex ?? target?.noindex ?? false;
 
-  /* The site suffix is applied from SEO_METADATA.titleTemplate rather than by
-     relying on the root layout's template: dynamically rendered routes do not
-     inherit it, and an absolute title keeps static and dynamic pages identical.
-     A target can opt out (the homepage already carries the club name). */
   const fullTitle = target?.absoluteTitle
     ? title
     : SEO_METADATA.titleTemplate.replace("%s", title);
@@ -512,6 +583,9 @@ export function buildMetadata(meta: PageMeta): Metadata {
       url: meta.path,
       siteName: SITE_NAME,
       locale: SITE_LOCALE,
+      /* Bengali is the intended alternate audience, so declare it on every page
+         (a child's openGraph object replaces the root layout's entirely). */
+      alternateLocale: ["bn_BD"],
       title,
       description,
       images: ogImages,
@@ -528,28 +602,8 @@ export function buildMetadata(meta: PageMeta): Metadata {
   };
 }
 
-/*   Server-side data fetching (metadata, sitemap, structured data)
-   Never throws: a cold or unreachable API degrades to the fallback so a
-   build or a page render can always complete. */
-
-/*  How long a server-rendered page may serve cached data.
-
-    These pages are statically rendered (good for LCP and for crawlers), but the
-    club publishes through the admin at unpredictable times. At the old 3600s
-    window an article written at 16:27 was invisible on the live site until
-    17:27 — which reads as "my content is not showing" rather than "cache".
-    One minute keeps first paint just as fast (the cached HTML is still served
-    instantly and regenerates in the background) while edits go live almost
-    immediately.
-
-    Keep this in sync with the `revalidate` literal exported by each page —
-    Next reads that one statically and cannot resolve an imported constant. */
 export const CONTENT_REVALIDATE = 60;
 
-/*  Every server-side API fetch carries this tag so a single revalidateTag() can
-    clear the data cache as well as the rendered pages. Timed revalidation alone
-    would still hand back up to 60s-old JSON after an admin edit; see
-    app/api/revalidate/route.ts. */
 export const API_CACHE_TAG = "api-data";
 
 export async function serverFetch<T = unknown>(
@@ -560,9 +614,6 @@ export async function serverFetch<T = unknown>(
     const res = await fetch(`${API_URL}${path}`, {
       next: { revalidate, tags: [API_CACHE_TAG] },
       headers: { Accept: "application/json" },
-      /* Generous timeout: serverFetch also runs at build time, where a cold
-         API instance can take several seconds to wake. A short timeout here
-         means pages get prerendered with empty content. */
       signal: AbortSignal.timeout(20000),
     });
     if (!res.ok) return null;

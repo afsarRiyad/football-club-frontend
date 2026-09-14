@@ -1,5 +1,6 @@
 import {
   CLUB,
+  CLUB_BANGLA_NAMES,
   CLUB_MAP_URL,
   CONTACT,
   SITE_NAME,
@@ -9,12 +10,25 @@ import {
   seoTarget,
 } from "./seo";
 
-/* ────────────────────────────────────────────────────────────────────
-   schema.org structured data (JSON-LD)
-   ────────────────────────────────────────────────────────────────────
-   These graphs are what let Google render rich results: organisation
-   knowledge panels, article cards, player/event details and breadcrumbs.
-   ──────────────────────────────────────────────────────────────────── */
+/**
+ * Every name the club genuinely answers to, for schema.org `alternateName`.
+ * This is the part of a Bangla/misspelling keyword effort that search engines
+ * actually read: it attaches the Bengali spelling and the common transliterations
+ * to the club's entity, so both scripts resolve to one knowledge panel. Kept to
+ * real name variants — not every keyword, which would be noise here.
+ */
+const ALTERNATE_NAMES = [
+  "Nayadiganta SC",
+  /* Bengali script first — that is how most searches for this club are typed. */
+  ...CLUB_BANGLA_NAMES,
+  "Nayadiganta Football Club",
+  "Noyadiganta",
+  "Noyadiganta Sporting Club",
+  "Noadigonto",
+  "Noadigonto Club",
+  "Nayadigonta",
+  "Naya Diganta Club",
+];
 
 type Json = Record<string, any>;
 
@@ -37,7 +51,7 @@ export function sportsClubSchema(): Json {
     "@id": `${SITE_URL}/#club`,
     name: CLUB.name,
     legalName: CLUB.legalName,
-    alternateName: "Nayadiganta SC",
+    alternateName: ALTERNATE_NAMES,
     url: SITE_URL,
     logo: CLUB.logo,
     image: CLUB.logo,
@@ -89,8 +103,8 @@ export function webSiteSchema(): Json {
     "@id": `${SITE_URL}/#website`,
     url: SITE_URL,
     name: SITE_NAME,
-    alternateName: "Nayadiganta SC",
-    inLanguage: "en",
+    alternateName: ALTERNATE_NAMES,
+    inLanguage: ["en", "bn"],
     publisher: { "@id": `${SITE_URL}/#club` },
   };
 }

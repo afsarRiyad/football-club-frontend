@@ -224,6 +224,9 @@ export default function SquadClient({ initialData }: { initialData: SquadInitial
   // Refs for socket room management
   const currentMatchIdRef = useRef<string>("");
   const currentTeamIdRef = useRef<string>("");
+  // Both sides of the current fixture. The formation we want belongs to one of
+  // them, which is a far better clue than the team we guessed at.
+  const currentMatchTeamIdsRef = useRef<string[]>([]);
 
   // Helper: re-fetch match formation for the current match
   // Uses the /match/:matchId endpoint (returns all formations for the match)
@@ -243,13 +246,18 @@ export default function SquadClient({ initialData }: { initialData: SquadInitial
         xi: f.startingXI?.length,
         bench: f.bench?.length,
       })));
-      // Find the formation for our team
-      const mfData = tid
-        ? formations.find((f) => {
-            const fTeamId = typeof f.team === "object" ? f.team._id : f.team;
-            return fTeamId === tid;
-          })
-        : formations[0];
+      /* Find our formation. Prefer an exact team match, then a formation
+         belonging to either side of this fixture, then the only formation on
+         the match. Without those fallbacks a wrong team pick (or an unnamed
+         opponent) silently blanked the XI, the bench and the captain. */
+      const teamIdOfFormation = (f: MatchFormation) =>
+        typeof f.team === "object" ? f.team?._id : f.team;
+      const sides = new Set(currentMatchTeamIdsRef.current);
+      const mfData =
+        (tid ? formations.find((f) => teamIdOfFormation(f) === tid) : undefined) ||
+        formations.find((f) => sides.has(teamIdOfFormation(f) as string)) ||
+        (formations.length === 1 ? formations[0] : undefined) ||
+        (tid ? undefined : formations[0]);
       console.log("[Squad] Matched formation:", mfData ? { formation: mfData.formation, xi: mfData.startingXI?.length, bench: mfData.bench?.length } : "NONE");
       if (mfData) {
         setMatchFormation(mfData);
@@ -401,6 +409,9 @@ export default function SquadClient({ initialData }: { initialData: SquadInitial
         // Store IDs for socket room management
         currentMatchIdRef.current = match._id;
         if (firstTeamId) currentTeamIdRef.current = firstTeamId;
+        currentMatchTeamIdsRef.current = [match.homeTeam, match.awayTeam]
+          .map((side) => (typeof side === "object" ? side?._id : side))
+          .filter((id): id is string => typeof id === "string" && id.length > 0);
         console.log("[Squad] Next match:", { matchId: match._id, status: match.status, teamId: firstTeamId });
 
         // Join socket formation room for real-time updates
@@ -484,6 +495,7 @@ export default function SquadClient({ initialData }: { initialData: SquadInitial
 
     if (source) {
       const ordered = [...source].sort((a, b) => a.slotIndex - b.slotIndex);
+      let placed = 0;
       for (const entry of ordered) {
         const entryPlayer = entry && entry.player ? entry.player : null;
         if (!entryPlayer) continue;
@@ -492,9 +504,13 @@ export default function SquadClient({ initialData }: { initialData: SquadInitial
         const p = players.find((pl) => pl._id === pid);
         if (p && entry.slotIndex >= 0 && entry.slotIndex < slotCount) {
           bySlot[entry.slotIndex] = p;
+          placed += 1;
         }
       }
-      return bySlot;
+      // A saved XI can outlive its players. Placing none of them would leave an
+      // empty pitch, which reads as a broken page — fall through to the
+      // best-guess XI instead.
+      if (placed > 0) return bySlot;
     }
 
     // Auto-pick by position priority

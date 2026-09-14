@@ -52,7 +52,10 @@ const SETTLE_INTERVAL_MS = 250;
 const SETTLE_MAX_MS = 6000;
 
 /* Browser plumbing (Devtools client, launch, cleanup) lives in scripts/lib/cdp.mjs,
-   shared with check-perf.mjs. */
+   shared with check-perf.mjs. The import is easy to lose in a refactor and the
+   failure is confusing — `launchSession is not defined` only after a browser
+   launch's worth of setup — so keep it at the top. */
+import { launchSession, sleep } from "./lib/cdp.mjs";
 
 /* ───────────────────────────── measurement ───────────────────────────── */
 
@@ -98,7 +101,10 @@ const signatureOf = (measured) =>
 
 /* ──────────────────────────────── main ──────────────────────────────── */
 
-const baseUrl = (process.argv[2] || process.env.LAYOUT_BASE_URL || "http://127.0.0.1:3000").replace(/\/+$/, "");
+/* `localhost`, not `127.0.0.1`: the API's CORS allowlist only contains
+   localhost, and the pages fetch client-side too — a 127.0.0.1 run measures
+   the layout of a page whose own data requests all failed. */
+const baseUrl = (process.argv[2] || process.env.LAYOUT_BASE_URL || "http://localhost:3000").replace(/\/+$/, "");
 
 try {
   const res = await fetch(`${baseUrl}/`, { redirect: "follow" });

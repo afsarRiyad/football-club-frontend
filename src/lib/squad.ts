@@ -39,13 +39,32 @@ const refId = (ref: PlayerRef | undefined | null): string | null => {
   return typeof ref === "string" ? ref : ref._id ?? null;
 };
 
-/* Pick the senior team (falling back to the first) and read everything the
-   squad page needs off it: captain, vice-captain, formation, starting XI,
-   bench and the ids of the players in that team. */
+/* How much line-up a team actually has. Teams come back newest-first, so a
+   brand-new empty team heads the list — picking the first SENIOR team handed
+   the squad page an empty line-up (no bench, no captain) even though the real
+   XI was saved on an older team. */
+const lineupScore = (team: Team): number =>
+  (team.startingXI?.length ?? 0) * 10 + (team.bench?.length ?? 0) * 3 + ((team.players ?? []) as PlayerRef[]).length;
+
+/* The club's primary team: the SENIOR team with the most line-up data, and on
+   a tie (or with nothing configured anywhere) the oldest one. */
+export function pickPrimaryTeam(teams: Team[]): Team | null {
+  const list = (Array.isArray(teams) ? teams : []).filter(Boolean);
+  if (list.length === 0) return null;
+  const seniors = list.filter((t) => t.category === "SENIOR");
+  const pool = seniors.length > 0 ? seniors : list;
+  // Oldest-first, so an all-empty field keeps the club's original team.
+  return [...pool].reverse().reduce((best, t) =>
+    lineupScore(t) > lineupScore(best) ? t : best,
+  );
+}
+
+/* Pick the primary team and read everything the squad page needs off it:
+   captain, vice-captain, formation, starting XI, bench and the ids of the
+   players in that team. */
 export function deriveTeamState(teams: Team[]): DerivedTeamState {
   const state = emptyTeamState();
-  const list = Array.isArray(teams) ? teams : [];
-  const team = list.find((t) => t.category === "SENIOR") || list[0];
+  const team = pickPrimaryTeam(teams);
   if (!team) return state;
 
   state.firstTeamId = typeof team._id === "string" ? team._id : null;

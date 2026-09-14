@@ -42,6 +42,16 @@ export default function Footer() {
               The official website of {SITE_NAME} — a football club based at
               Bhuiyarhat Chowrasta, Kabirhat, Noakhali, Bangladesh.
             </p>
+            {/* The club's name in Bengali. Most people looking for this club
+                search in Bengali script, and a keyword that never appears on
+                the page is not a signal — so the Bengali terms in the metadata
+                are backed by real text here. `lang` is required: without it the
+                browser guesses the script and screen readers mispronounce it.
+                Bengali glyphs are not in our webfonts, so this line falls back
+                to the system Bengali font (Nirmala UI, Noto Sans Bengali). */}
+            <p lang="bn" className="text-sm text-text-secondary/90">
+              নয়াদিগন্ত স্পোর্টিং ক্লাব — ভূঁইয়ারহাট চৌরাস্তা, কাবিরহাট, নোয়াখালী
+            </p>
             {/* Only rendered once CLUB.socials is filled in: a dead `href="#"`
                 link is worse for users and crawlers than no icon at all. */}
             {CLUB.socials.length > 0 ? (
